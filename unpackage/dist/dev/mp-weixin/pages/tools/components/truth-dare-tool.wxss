@@ -1,0 +1,189 @@
+.truth-dare-tool.data-v-f82a324c {
+  padding: 30rpx;
+}
+.tool-header.data-v-f82a324c {
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+.tool-title.data-v-f82a324c {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 10rpx;
+}
+.tool-hint.data-v-f82a324c {
+  display: block;
+  font-size: 24rpx;
+  color: #999999;
+}
+.mode-tabs.data-v-f82a324c {
+  display: flex;
+  background-color: #f5f5f5;
+  border-radius: 12rpx;
+  padding: 6rpx;
+  margin-bottom: 40rpx;
+}
+.mode-tab.data-v-f82a324c {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  color: #666666;
+}
+.mode-tab.active.data-v-f82a324c {
+  background-color: #ffffff;
+  color: #fa709a;
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+.question-display.data-v-f82a324c {
+  min-height: 300rpx;
+  margin-bottom: 30rpx;
+  perspective: 1000rpx;
+}
+.question-card.data-v-f82a324c {
+  width: 100%;
+  min-height: 300rpx;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+.question-card.flipped.data-v-f82a324c {
+  transform: rotateY(180deg);
+}
+.card-front.data-v-f82a324c, .card-back.data-v-f82a324c {
+  position: absolute;
+  width: 100%;
+  min-height: 300rpx;
+  -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+  border-radius: 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+}
+.card-front.data-v-f82a324c {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: #ffffff;
+}
+.card-icon.data-v-f82a324c {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+.card-text.data-v-f82a324c {
+  font-size: 32rpx;
+  opacity: 0.9;
+}
+.card-back.data-v-f82a324c {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: rotateY(180deg);
+  color: #ffffff;
+}
+.question-text.data-v-f82a324c {
+  font-size: 32rpx;
+  line-height: 1.6;
+  text-align: center;
+}
+.stats-bar.data-v-f82a324c {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 30rpx;
+  padding: 20rpx;
+  background-color: #f8f9ff;
+  border-radius: 16rpx;
+}
+.stat-item.data-v-f82a324c {
+  text-align: center;
+}
+.stat-item .stat-label.data-v-f82a324c {
+  display: block;
+  font-size: 24rpx;
+  color: #999999;
+  margin-bottom: 8rpx;
+}
+.stat-item .stat-value.data-v-f82a324c {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #fa709a;
+}
+.action-buttons.data-v-f82a324c {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+.action-btn.data-v-f82a324c {
+  flex: 1;
+  border-radius: 16rpx;
+  padding: 24rpx 48rpx;
+  font-size: 32rpx;
+  text-align: center;
+}
+.action-btn.primary.data-v-f82a324c {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: #ffffff;
+}
+.action-btn.secondary.data-v-f82a324c {
+  background-color: #ffffff;
+  color: #666666;
+  border: 2rpx solid #dddddd;
+}
+.action-btn.data-v-f82a324c:active {
+  opacity: 0.8;
+}
+.history-section.data-v-f82a324c {
+  background-color: #f8f9ff;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+.history-header.data-v-f82a324c {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+}
+.history-header.data-v-f82a324c:active {
+  background-color: #f0f2ff;
+}
+.history-title.data-v-f82a324c {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+}
+.history-toggle.data-v-f82a324c {
+  font-size: 24rpx;
+  color: #999999;
+}
+.history-list.data-v-f82a324c {
+  padding: 0 24rpx 24rpx;
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+.history-item.data-v-f82a324c {
+  padding: 16rpx;
+  background-color: #ffffff;
+  border-radius: 12rpx;
+  margin-bottom: 12rpx;
+}
+.history-item.data-v-f82a324c:last-child {
+  margin-bottom: 0;
+}
+.history-mode.data-v-f82a324c {
+  display: inline-block;
+  font-size: 22rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  padding: 4rpx 12rpx;
+  border-radius: 10rpx;
+  margin-bottom: 8rpx;
+}
+.history-question.data-v-f82a324c {
+  display: block;
+  font-size: 26rpx;
+  color: #666666;
+  line-height: 1.4;
+}

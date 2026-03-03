@@ -1,0 +1,23 @@
+{
+  "pages": [
+    "pages/splash/index",
+    "pages/home/index",
+    "pages/boardgame/index",
+    "pages/boardgame/werewolf-room",
+    "pages/boardgame/avalon-room",
+    "pages/tools/index",
+    "pages/rank/room",
+    "pages/chat/anonymous"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "欢聚局",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f8f8f8",
+    "enablePullDownRefresh": true,
+    "backgroundTextStyle": "dark"
+  },
+  "permission": {},
+  "requiredPrivateInfos": [],
+  "usingComponents": {}
+}

@@ -1,0 +1,44 @@
+{
+    "name" : "好友派对助手",
+    "appid" : "__UNI__65B8A05",
+    "description" : "好友派对助手- 好友聚会平台",
+    "versionName" : "1.0.0",
+    "versionCode" : "100",
+    "transformPx" : false,
+    "mp-weixin" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "postcss" : true,
+            "minified" : true
+        },
+        "usingComponents" : true,
+        "permission" : {},
+        "requiredPrivateInfos" : []
+    },
+    "vueVersion" : "3",
+    "app-plus" : {
+        "distribute" : {
+            "android" : {
+                "icons" : {
+                    "mdpi" : "static/android/mipmap-mdpi/ic_launcher.png",
+                    "hdpi" : "static/android/mipmap-hdpi/ic_launcher.png",
+                    "xhdpi" : "static/android/mipmap-xhdpi/ic_launcher.png",
+                    "xxhdpi" : "static/android/mipmap-xxhdpi/ic_launcher.png",
+                    "xxxhdpi" : "static/android/mipmap-xxxhdpi/ic_launcher.png"
+                }
+            },
+            "ios" : {
+                "icons" : {
+                    "normal" : "unpackage/res/icons/57x57.png",
+                    "retina" : "unpackage/res/icons/114x114.png",
+                    "retina8" : "unpackage/res/icons/120x120.png",
+                    "retina9" : "unpackage/res/icons/180x180.png",
+                    "retina11" : "unpackage/res/icons/1024x1024.png"
+                },
+                "dSYMs" : false
+            }
+        }
+    }
+}

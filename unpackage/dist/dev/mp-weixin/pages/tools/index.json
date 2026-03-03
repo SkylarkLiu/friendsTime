@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "派对工具箱",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "dice-tool": "./components/dice-tool",
+    "timer-tool": "./components/timer-tool",
+    "truth-dare-tool": "./components/truth-dare-tool"
+  }
+}

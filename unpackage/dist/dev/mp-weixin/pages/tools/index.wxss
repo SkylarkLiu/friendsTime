@@ -1,0 +1,109 @@
+.tools-page.data-v-bf705dbd {
+  padding: 30rpx;
+  background-color: #f8f8f8;
+  min-height: 100vh;
+}
+.tools-grid.data-v-bf705dbd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+.tool-card.data-v-bf705dbd {
+  width: calc(50% - 10rpx);
+  background-color: #ffffff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+.tool-card.data-v-bf705dbd:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+.tool-icon.data-v-bf705dbd {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+}
+.tool-icon .icon-text.data-v-bf705dbd {
+  font-size: 40rpx;
+}
+.tool-info.data-v-bf705dbd {
+  flex: 1;
+}
+.tool-name.data-v-bf705dbd {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 6rpx;
+}
+.tool-desc.data-v-bf705dbd {
+  display: block;
+  font-size: 22rpx;
+  color: #999999;
+}
+.tool-modal.data-v-bf705dbd {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 999;
+}
+.modal-content.data-v-bf705dbd {
+  width: 100%;
+  max-height: 90vh;
+  background-color: #ffffff;
+  border-radius: 32rpx 32rpx 0 0;
+  overflow: hidden;
+  animation: slideUp-bf705dbd 0.3s ease;
+}
+@keyframes slideUp-bf705dbd {
+from {
+    transform: translateY(100%);
+}
+to {
+    transform: translateY(0);
+}
+}
+.modal-header.data-v-bf705dbd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.modal-title.data-v-bf705dbd {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333333;
+}
+.close-btn.data-v-bf705dbd {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+}
+.close-btn text.data-v-bf705dbd {
+  font-size: 28rpx;
+  color: #666666;
+}
+.close-btn.data-v-bf705dbd:active {
+  background-color: #eeeeee;
+}
+.modal-body.data-v-bf705dbd {
+  max-height: 80vh;
+  overflow-y: auto;
+}

@@ -1,0 +1,75 @@
+{
+  "pages": [
+    {
+      "path": "pages/splash/index",
+      "style": {
+        "navigationBarTitleText": "好友派对助手",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "好友派对助手",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/boardgame/index",
+      "style": {
+        "navigationBarTitleText": "桌游助手",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/boardgame/werewolf-room",
+      "style": {
+        "navigationBarTitleText": "狼人杀房间",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/boardgame/avalon-room",
+      "style": {
+        "navigationBarTitleText": "阿瓦隆房间",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/tools/index",
+      "style": {
+        "navigationBarTitleText": "派对工具箱",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/rank/room",
+      "style": {
+        "navigationBarTitleText": "好友排名房间",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/chat/anonymous",
+      "style": {
+        "navigationBarTitleText": "匿名吐槽",
+        "enablePullDownRefresh": false
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "欢聚局",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f8f8f8",
+    "enablePullDownRefresh": true,
+    "backgroundTextStyle": "dark"
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  }
+}
