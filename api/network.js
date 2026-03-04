@@ -1,7 +1,7 @@
 /**
- * 网络通信模块 - 真实 WebSocket + 指数退避重连
+ * 网络通信模块 - 真实 WebSocket + 指数退避重连 + WiFi 自动检测
  */
-import { getApiBaseUrl } from './config'
+import { getApiBaseUrl, setApiBaseUrl } from './config'
 
 class NetworkManager {
   constructor() {
@@ -18,6 +18,158 @@ class NetworkManager {
     this.reconnectTimer = null
     this.pingTimer = null
     this._connecting = false
+    this.localIP = null
+    this.networkType = 'unknown'
+  }
+
+  /**
+   * 获取当前网络类型
+   */
+  async getNetworkType() {
+    return new Promise((resolve) => {
+      uni.getNetworkType({
+        success: (res) => {
+          this.networkType = res.networkType
+          resolve(res.networkType)
+        },
+        fail: () => {
+          this.networkType = 'unknown'
+          resolve('unknown')
+        }
+      })
+    })
+  }
+
+  /**
+   * 获取本地 IP 地址
+   * 注意：微信小程序需要在 app.json 中配置权限
+   */
+  async getLocalIPAddress() {
+    return new Promise((resolve) => {
+      // 尝试使用 uni.getLocalIPAddress（部分平台支持）
+      if (typeof uni.getLocalIPAddress === 'function') {
+        uni.getLocalIPAddress({
+          success: (res) => {
+            this.localIP = res.localip || res.ip
+            resolve(this.localIP)
+          },
+          fail: () => {
+            // 如果获取失败，尝试其他方式
+            resolve(null)
+          }
+        })
+      } else {
+        // 使用 WebRTC 获取本地 IP（H5 环境）
+        this._getLocalIPViaWebRTC().then(ip => {
+          this.localIP = ip
+          resolve(ip)
+        }).catch(() => {
+          resolve(null)
+        })
+      }
+    })
+  }
+
+  /**
+   * 通过 WebRTC 获取本地 IP（H5 环境）
+   */
+  _getLocalIPViaWebRTC() {
+    return new Promise((resolve, reject) => {
+      if (typeof window === 'undefined' || !window.RTCPeerConnection) {
+        reject(new Error('WebRTC not supported'))
+        return
+      }
+
+      const pc = new RTCPeerConnection({
+        iceServers: []
+      })
+
+      pc.createDataChannel('')
+
+      pc.onicecandidate = (e) => {
+        if (!e.candidate) {
+          pc.close()
+          reject(new Error('No candidate'))
+          return
+        }
+
+        const candidate = e.candidate.candidate
+        const ipMatch = candidate.match(/(\d+\.\d+\.\d+\.\d+)/)
+        
+        if (ipMatch) {
+          const ip = ipMatch[1]
+          // 过滤掉非局域网 IP
+          if (this._isPrivateIP(ip)) {
+            pc.close()
+            resolve(ip)
+          }
+        }
+      }
+
+      pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .catch(reject)
+    })
+  }
+
+  /**
+   * 判断是否为局域网 IP
+   */
+  _isPrivateIP(ip) {
+    const parts = ip.split('.').map(Number)
+    // 10.0.0.0 - 10.255.255.255
+    if (parts[0] === 10) return true
+    // 172.16.0.0 - 172.31.255.255
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true
+    // 192.168.0.0 - 192.168.255.255
+    if (parts[0] === 192 && parts[1] === 168) return true
+    return false
+  }
+
+  /**
+   * 检测 WiFi 并自动设置服务器地址
+   * @returns {Promise<{isWiFi: boolean, localIP: string|null, serverUrl: string}>}
+   */
+  async detectWiFiAndSetServer() {
+    const networkType = await this.getNetworkType()
+    const isWiFi = networkType === 'wifi'
+    
+    let localIP = null
+    let serverUrl = getApiBaseUrl()
+
+    if (isWiFi) {
+      localIP = await this.getLocalIPAddress()
+      
+      if (localIP) {
+        // 设置服务器地址为局域网 IP
+        serverUrl = `http://${localIP}:3000`
+        
+        // 保存到本地存储
+        try {
+          setApiBaseUrl(serverUrl)
+          console.log('已自动设置服务器地址:', serverUrl)
+        } catch (e) {
+          console.error('设置服务器地址失败:', e)
+        }
+      }
+    }
+
+    return {
+      isWiFi,
+      localIP,
+      serverUrl
+    }
+  }
+
+  /**
+   * 获取当前服务器信息
+   */
+  getServerInfo() {
+    return {
+      networkType: this.networkType,
+      localIP: this.localIP,
+      serverUrl: getApiBaseUrl()
+    }
   }
 
   getWsUrl() {
@@ -27,11 +179,9 @@ class NetworkManager {
   }
 
   buildWsUrl() {
-    const url = new URL(this.getWsUrl())
-    url.searchParams.set('roomId', this.roomId)
-    url.searchParams.set('playerId', this.playerId)
-    url.searchParams.set('token', this.token)
-    return url.toString()
+    const wsBaseUrl = this.getWsUrl()
+    const params = `roomId=${encodeURIComponent(this.roomId)}&playerId=${encodeURIComponent(this.playerId)}&token=${encodeURIComponent(this.token)}`
+    return `${wsBaseUrl}?${params}`
   }
 
   async init(isHost, roomId, playerId, token, wsUrl = null) {
@@ -41,6 +191,11 @@ class NetworkManager {
     this.token = token
     if (wsUrl) this.wsUrl = wsUrl
     this.reconnectAttempts = 0
+
+    // 如果是房主，检测 WiFi 并设置服务器地址
+    if (isHost) {
+      await this.detectWiFiAndSetServer()
+    }
 
     return this._connect()
   }
@@ -172,8 +327,6 @@ class NetworkManager {
   }
 
   broadcast(type, payload) {
-    // 客户端不直接广播，由服务端在 HTTP 更新后广播
-    // 保留接口兼容，但实际广播由服务端完成
     return true
   }
 
@@ -202,8 +355,9 @@ class NetworkManager {
 
   generateShareLink() {
     if (!this.roomId) return ''
-    const baseUrl = typeof window !== 'undefined' ? `${window.location.origin}/pages/rank/room` : ''
-    return `${baseUrl}?roomId=${encodeURIComponent(this.roomId)}`
+    const serverUrl = getApiBaseUrl()
+    const baseUrl = serverUrl.replace('/api', '')
+    return `${baseUrl}/join?roomId=${encodeURIComponent(this.roomId)}`
   }
 
   generateQRCode() {

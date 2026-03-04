@@ -58,10 +58,27 @@
           <text class="room-id">房间号: {{ currentRoom.roomId }}</text>
           <text class="player-count">{{ currentRoom.players.length }}/18 人</text>
           <text class="network-status" :class="networkStatus">网络: {{ connectionStatusText }}</text>
+          <view v-if="wifiInfo.isWiFi" class="wifi-info">
+            <text class="wifi-icon">📶</text>
+            <text class="wifi-text">WiFi局域网</text>
+          </view>
         </view>
         <view class="room-status" :class="{ 'playing': gameState === 'dealing' || gameState === 'all_confirmed' || gameState === 'judge_view' }">
           <text class="status-text">{{ gameStatusText }}</text>
         </view>
+      </view>
+      
+      <!-- 服务器信息（仅房主可见） -->
+      <view v-if="isHost && wifiInfo.serverUrl" class="server-info card">
+        <view class="server-header">
+          <text class="server-icon">🖥️</text>
+          <text class="server-title">服务器地址</text>
+        </view>
+        <view class="server-content">
+          <text class="server-url">{{ wifiInfo.serverUrl }}</text>
+          <button class="copy-btn" @click="copyServerUrl">复制</button>
+        </view>
+        <text class="server-tip">其他玩家连接同一WiFi后，使用此地址加入房间</text>
       </view>
       
       <!-- 玩家列表 -->
@@ -414,6 +431,13 @@ const showInviteModal = ref(false)
 const shareLink = ref('')
 const qrCodeUrl = ref('')
 
+// WiFi 信息
+const wifiInfo = ref({
+  isWiFi: false,
+  localIP: null,
+  serverUrl: ''
+})
+
 // 计算属性
 const networkStatus = computed(() => roomStore.networkStatus)
 const connectionStatusText = computed(() => {
@@ -476,7 +500,7 @@ const getPlayerAvatar = (player) => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   const savedRoom = roomStore.loadCurrentRoom()
   if (savedRoom) {
     // 恢复玩家名称
@@ -499,6 +523,14 @@ onMounted(() => {
   const defaultPreset = getPresetByPlayerCount(9)
   if (defaultPreset && !selectedPreset.value) {
     selectPreset(defaultPreset)
+  }
+  
+  // 检测 WiFi 并获取服务器信息
+  try {
+    const info = await networkManager.detectWiFiAndSetServer()
+    wifiInfo.value = info
+  } catch (e) {
+    console.error('检测WiFi失败:', e)
   }
   
   // 注册网络事件
@@ -931,6 +963,16 @@ const copyShareLink = () => {
   })
 }
 
+// 复制服务器地址
+const copyServerUrl = () => {
+  uni.setClipboardData({
+    data: wifiInfo.value.serverUrl,
+    success: () => {
+      uni.showToast({ title: '服务器地址已复制', icon: 'success' })
+    }
+  })
+}
+
 // 分享给好友
 const shareToFriends = () => {
   // 实际项目中需要使用uni.share API
@@ -1068,6 +1110,86 @@ const shareToFriends = () => {
   .room-status.playing & {
     color: #ff9800;
   }
+}
+
+.wifi-info {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+.wifi-icon {
+  font-size: 20rpx;
+}
+
+.wifi-text {
+  font-size: 20rpx;
+  color: #4caf50;
+  font-weight: 500;
+}
+
+.server-info {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1rpx solid rgba(76, 175, 80, 0.3);
+  padding: 20rpx;
+  border-radius: 12rpx;
+  margin-top: 16rpx;
+}
+
+.server-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.server-icon {
+  font-size: 24rpx;
+}
+
+.server-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #4caf50;
+}
+
+.server-content {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.server-url {
+  flex: 1;
+  font-size: 24rpx;
+  color: #ffffff;
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  word-break: break-all;
+}
+
+.copy-btn {
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  color: #ffffff;
+  border: none;
+  
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.server-tip {
+  display: block;
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
 }
 
 .player-list {

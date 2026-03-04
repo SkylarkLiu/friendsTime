@@ -48,11 +48,28 @@
             <text class="room-id">房间码: {{ currentRoom.roomId }}</text>
             <text class="room-count">{{ playerCount }}人</text>
           </view>
+          <view v-if="wifiInfo.isWiFi" class="wifi-info">
+            <text class="wifi-icon">📶</text>
+            <text class="wifi-text">WiFi局域网</text>
+          </view>
         </view>
         <view class="room-actions">
           <button class="action-btn small" @click="copyRoomId">复制</button>
           <button class="action-btn small danger" @click="handleLeaveRoom">退出</button>
         </view>
+      </view>
+      
+      <!-- 服务器信息（仅房主可见） -->
+      <view v-if="isHost && wifiInfo.serverUrl" class="server-info card">
+        <view class="server-header">
+          <text class="server-icon">🖥️</text>
+          <text class="server-title">服务器地址</text>
+        </view>
+        <view class="server-content">
+          <text class="server-url">{{ wifiInfo.serverUrl }}</text>
+          <button class="copy-btn" @click="copyServerUrl">复制</button>
+        </view>
+        <text class="server-tip">其他玩家连接同一WiFi后，使用此地址加入房间</text>
       </view>
       
       <view class="rank-section card">
@@ -224,9 +241,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoomStore } from '@/store/room'
+import networkManager from '@/api/network'
 import { getApiBaseUrl, setApiBaseUrl, clearApiBaseUrl } from '@/api/config'
 
 const roomStore = useRoomStore()
+
+// WiFi 信息
+const wifiInfo = ref({
+  isWiFi: false,
+  localIP: null,
+  serverUrl: ''
+})
 
 const isInRoom = computed(() => roomStore.isInRoom)
 const currentRoom = computed(() => roomStore.currentRoom)
@@ -269,8 +294,16 @@ const inputScore = ref('')
 const inputRole = ref('')
 const selectedPlayer = ref(null)
 
-onMounted(() => {
+onMounted(async () => {
   roomStore.loadCurrentRoom()
+  
+  // 检测 WiFi 并获取服务器信息
+  try {
+    const info = await networkManager.detectWiFiAndSetServer()
+    wifiInfo.value = info
+  } catch (e) {
+    console.error('检测WiFi失败:', e)
+  }
 })
 
 const showJoinModal = () => {
@@ -536,6 +569,16 @@ const copyRoomId = () => {
   })
 }
 
+// 复制服务器地址
+const copyServerUrl = () => {
+  uni.setClipboardData({
+    data: wifiInfo.value.serverUrl,
+    success: () => {
+      uni.showToast({ title: '服务器地址已复制', icon: 'success' })
+    }
+  })
+}
+
 
 </script>
 
@@ -701,6 +744,86 @@ const copyRoomId = () => {
 .room-id, .room-count {
   font-size: 24rpx;
   color: #999999;
+}
+
+.wifi-info {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 8rpx;
+}
+
+.wifi-icon {
+  font-size: 20rpx;
+}
+
+.wifi-text {
+  font-size: 20rpx;
+  color: #4caf50;
+  font-weight: 500;
+}
+
+.server-info {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1rpx solid rgba(76, 175, 80, 0.3);
+  padding: 20rpx;
+  border-radius: 12rpx;
+  margin-top: 16rpx;
+}
+
+.server-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.server-icon {
+  font-size: 24rpx;
+}
+
+.server-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #4caf50;
+}
+
+.server-content {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.server-url {
+  flex: 1;
+  font-size: 24rpx;
+  color: #333333;
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 12rpx 16rpx;
+  border-radius: 8rpx;
+  word-break: break-all;
+}
+
+.copy-btn {
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  color: #ffffff;
+  border: none;
+  
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.server-tip {
+  display: block;
+  font-size: 20rpx;
+  color: #666666;
+  line-height: 1.4;
 }
 
 .room-actions {
