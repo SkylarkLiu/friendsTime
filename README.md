@@ -156,13 +156,29 @@ friendsTime/
 2. 使用 HBuilderX 打开项目
 3. 运行到微信开发者工具或手机模拟器
 
-### 2. 打包发布
+### 2. 联网模式（跨设备实时同步）
+
+项目支持**联网模式**，可让 10 台设备通过房间码加入同一房间并实时同步状态。
+
+**启动后端服务：**
+```bash
+cd server && npm install && npm start
+```
+
+**环境变量（api/config.js）：**
+- `VITE_USE_LOCAL_STORAGE=true`：开发时使用本地模拟（默认）
+- `VITE_USE_LOCAL_STORAGE=false`：打包时走服务端
+- `VITE_API_BASE_URL`：生产环境改为实际后端地址（如 `http://192.168.1.100:3000` 或 `https://api.yourdomain.com`）
+
+**打包 APK 前：** 修改 `.env.production` 中的 `VITE_API_BASE_URL` 为服务器地址，确保手机能访问。
+
+### 3. 打包发布
 1. 配置 manifest.json 文件
 2. 设置应用图标
 3. 使用 HBuilderX 云打包
 4. 生成 APK 或小程序代码
 
-### 3. 功能使用
+### 4. 功能使用
 - **桌游助手**：选择游戏类型 → 创建/加入房间 → 开始游戏
 - **派对工具箱**：选择工具 → 开始使用
 - **好友排名**：创建房间 → 邀请好友 → 记录得分

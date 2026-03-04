@@ -550,10 +550,14 @@ const createRoom = async () => {
     return
   }
   
-  const room = await roomStore.createRoom('狼人杀房间', winCondition.value, roomIdInput.value)
-  await roomStore.addPlayer(playerName.value)
-  
-  uni.showToast({ title: '房间创建成功', icon: 'success' })
+  try {
+    await roomStore.createRoom('狼人杀房间', winCondition.value, {
+      hostName: playerName.value
+    })
+    uni.showToast({ title: '房间创建成功', icon: 'success' })
+  } catch (e) {
+    uni.showToast({ title: e.message || '创建失败', icon: 'none' })
+  }
 }
 
 const joinRoom = async () => {

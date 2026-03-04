@@ -15,6 +15,10 @@
           <text class="btn-icon">➕</text>
           <text class="btn-text">创建房间</text>
         </button>
+        <button class="entry-btn secondary" @click="showServerConfig">
+          <text class="btn-icon">⚙️</text>
+          <text class="btn-text">服务器设置</text>
+        </button>
       </view>
       
       <view class="recent-rooms" v-if="recentRooms.length > 0">
@@ -220,6 +224,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoomStore } from '@/store/room'
+import { getApiBaseUrl, setApiBaseUrl, clearApiBaseUrl } from '@/api/config'
 
 const roomStore = useRoomStore()
 
@@ -278,6 +283,33 @@ const showCreateModal = () => {
   inputRoomName.value = ''
   inputPlayerName.value = ''
   showCreateRoomModal.value = true
+}
+
+const showServerConfig = () => {
+  const current = getApiBaseUrl()
+  uni.showModal({
+    title: '服务器设置',
+    editable: true,
+    placeholderText: '例如：http://192.168.1.100:3000',
+    content: current,
+    confirmText: '保存',
+    cancelText: '取消',
+    success: (res) => {
+      if (!res.confirm) return
+      const value = (res.content || '').trim()
+      try {
+        if (!value) {
+          clearApiBaseUrl()
+          uni.showToast({ title: '已恢复默认地址', icon: 'success' })
+          return
+        }
+        setApiBaseUrl(value)
+        uni.showToast({ title: '已保存', icon: 'success' })
+      } catch (e) {
+        uni.showToast({ title: e.message || '地址无效', icon: 'none' })
+      }
+    }
+  })
 }
 
 const handleCloseJoinModal = () => {
@@ -353,15 +385,21 @@ const handleCreateRoom = async () => {
     return
   }
   
-  const room = await roomStore.createRoom(inputRoomName.value.trim())
-  
-  await roomStore.joinRoom(room.roomId, inputPlayerName.value.trim())
-  
-  showCreateRoomModal.value = false
-  uni.showToast({
-    title: '创建成功',
-    icon: 'success'
-  })
+  try {
+    await roomStore.createRoom(inputRoomName.value.trim(), 'slaughter_side', {
+      hostName: inputPlayerName.value.trim()
+    })
+    showCreateRoomModal.value = false
+    uni.showToast({
+      title: '创建成功',
+      icon: 'success'
+    })
+  } catch (e) {
+    uni.showToast({
+      title: e.message || '创建失败',
+      icon: 'none'
+    })
+  }
 }
 
 const quickJoinRoom = async (roomId) => {

@@ -1,0 +1,15 @@
+{
+  "name": "friendstime-server",
+  "version": "1.0.0",
+  "description": "好友派对助手 - 房间同步服务",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "fastify": "^4.28.1",
+    "ws": "^8.18.0"
+  }
+}

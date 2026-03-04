@@ -5,7 +5,11 @@
   "main": "main.js",
   "scripts": {
     "dev:mp-weixin": "uni -p mp-weixin",
-    "build:mp-weixin": "uni build -p mp-weixin"
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "dev:app": "uni -p app-plus",
+    "build:app": "uni build -p app-plus",
+    "server": "cd server && npm run start",
+    "server:dev": "cd server && npm run dev"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-4010520240507001",
