@@ -18,7 +18,7 @@
           </view>
         </view>
         
-        <view class="input-section">
+        <view class="input-section" v-if="!isLocalStorageMode">
           <text class="input-label">房间地址</text>
           <text class="input-tip">（玩家请确保与房主一致并连接至同一WIFI）</text>
           <view class="input-group">
@@ -394,11 +394,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoomStore } from '@/store/room'
 import { AvalonGame } from '@/store/game/avalon'
 import networkManager from '@/api/network'
-import { getApiBaseUrl, setApiBaseUrl } from '@/api/config'
+import { getApiBaseUrl, setApiBaseUrl, USE_LOCAL_STORAGE } from '@/api/config'
 import ShareRoomModal from '@/components/ShareRoomModal.vue'
 
 const roomStore = useRoomStore()
 const game = new AvalonGame()
+
+const isLocalStorageMode = USE_LOCAL_STORAGE
 
 // 房间相关状态
 const roomIdInput = ref('')
@@ -609,6 +611,11 @@ onMounted(async () => {
   try {
     const info = await networkManager.detectWiFiAndSetServer()
     wifiInfo.value = info
+    
+    // 在非本地存储模式下，自动填入服务器地址
+    if (!isLocalStorageMode && info.serverUrl) {
+      serverAddress.value = info.serverUrl
+    }
   } catch (e) {
     console.error('检测WiFi失败:', e)
   }
@@ -662,7 +669,7 @@ const createRoom = async () => {
     return
   }
   
-  if (serverAddress.value) {
+  if (!isLocalStorageMode && serverAddress.value) {
     try {
       setApiBaseUrl(serverAddress.value)
     } catch (e) {
@@ -688,7 +695,7 @@ const joinRoom = async () => {
     return
   }
   
-  if (serverAddress.value) {
+  if (!isLocalStorageMode && serverAddress.value) {
     try {
       setApiBaseUrl(serverAddress.value)
     } catch (e) {

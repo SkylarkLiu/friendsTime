@@ -19,7 +19,7 @@
           </view>
         </view>
         
-        <view class="input-section">
+        <view class="input-section" v-if="!isLocalStorageMode">
           <text class="input-label">房间地址</text>
           <text class="input-tip">（玩家请确保与房主一致并连接至同一WIFI）</text>
           <view class="input-group">
@@ -147,12 +147,15 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed } from 'vue'
+import { ref, nextTick, computed, onMounted } from 'vue'
 import { getStorage, setStorage } from '@/utils/storage'
-import { getApiBaseUrl, setApiBaseUrl } from '@/api/config'
+import { getApiBaseUrl, setApiBaseUrl, USE_LOCAL_STORAGE } from '@/api/config'
+import networkManager from '@/api/network'
 
 const MESSAGES_STORAGE_KEY = 'anonymous_messages'
 const CURRENT_ROOM_KEY = 'anonymous_current_room'
+
+const isLocalStorageMode = USE_LOCAL_STORAGE
 
 const roomIdInput = ref('')
 const serverAddress = ref(getApiBaseUrl())
@@ -234,7 +237,7 @@ const saveCurrentRoom = () => {
 }
 
 const createRoom = () => {
-  if (serverAddress.value) {
+  if (!isLocalStorageMode && serverAddress.value) {
     try {
       setApiBaseUrl(serverAddress.value)
     } catch (e) {
@@ -257,7 +260,7 @@ const joinRoom = () => {
     return
   }
   
-  if (serverAddress.value) {
+  if (!isLocalStorageMode && serverAddress.value) {
     try {
       setApiBaseUrl(serverAddress.value)
     } catch (e) {
@@ -362,6 +365,20 @@ const submitReply = () => {
 const loadMoreMessages = () => {
   uni.showToast({ title: '没有更多了', icon: 'none' })
 }
+
+// 检测 WiFi 并自动填入服务器地址
+onMounted(async () => {
+  if (!isLocalStorageMode) {
+    try {
+      const info = await networkManager.detectWiFiAndSetServer()
+      if (info.serverUrl) {
+        serverAddress.value = info.serverUrl
+      }
+    } catch (e) {
+      console.error('检测WiFi失败:', e)
+    }
+  }
+})
 
 loadMessages()
 loadCurrentRoom()

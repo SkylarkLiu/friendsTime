@@ -17,7 +17,9 @@ function normalizeBaseUrl(url) {
 export function getApiBaseUrl() {
   const stored = normalizeBaseUrl(uni.getStorageSync(API_BASE_URL_STORAGE_KEY))
   if (stored) return stored
-  return normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL) || 'http://localhost:3000'
+  const envUrl = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL)
+  if (envUrl) return envUrl
+  return ''
 }
 
 export function setApiBaseUrl(url) {
