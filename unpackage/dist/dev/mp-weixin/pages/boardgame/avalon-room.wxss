@@ -39,6 +39,12 @@
   color: #e0e0e0;
   margin-bottom: 12rpx;
 }
+.input-tip.data-v-caed1a3f {
+  display: block;
+  font-size: 22rpx;
+  color: #999999;
+  margin-bottom: 12rpx;
+}
 .input-group.data-v-caed1a3f {
   position: relative;
 }

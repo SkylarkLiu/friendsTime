@@ -19,6 +19,19 @@
         </view>
         
         <view class="input-section">
+          <text class="input-label">房间地址</text>
+          <text class="input-tip">（玩家请确保与房主一致并连接至同一WIFI）</text>
+          <view class="input-group">
+            <input 
+              v-model="serverAddress" 
+              type="text" 
+              placeholder="例如：http://192.168.1.100:3000" 
+              class="input-field"
+            />
+          </view>
+        </view>
+        
+        <view class="input-section">
           <text class="input-label">昵称</text>
           <view class="input-group">
             <input 
@@ -420,6 +433,7 @@ import { WerewolfGame } from '@/store/game/werewolf'
 import { getAllPresets, getPresetByPlayerCount } from '@/store/game/presets'
 import { getCampIcon } from '@/utils/werewolfConfig'
 import networkManager from '@/api/network'
+import { getApiBaseUrl, setApiBaseUrl } from '@/api/config'
 import ShareRoomModal from '@/components/ShareRoomModal.vue'
 
 const roomStore = useRoomStore()
@@ -428,6 +442,7 @@ const game = new WerewolfGame()
 // 房间相关状态
 const roomIdInput = ref('')
 const playerName = ref('')
+const serverAddress = ref(getApiBaseUrl())
 const showRoleCard = ref(false)
 const cardFlipped = ref(false)
 const currentRole = ref(null)
@@ -597,6 +612,15 @@ const createRoom = async () => {
     return
   }
   
+  if (serverAddress.value) {
+    try {
+      setApiBaseUrl(serverAddress.value)
+    } catch (e) {
+      uni.showToast({ title: e.message || '服务器地址无效', icon: 'none' })
+      return
+    }
+  }
+  
   try {
     await roomStore.createRoom('狼人杀房间', winCondition.value, {
       hostName: playerName.value,
@@ -612,6 +636,15 @@ const joinRoom = async () => {
   if (!roomIdInput.value || !playerName.value) {
     uni.showToast({ title: '请输入房间号和昵称', icon: 'none' })
     return
+  }
+  
+  if (serverAddress.value) {
+    try {
+      setApiBaseUrl(serverAddress.value)
+    } catch (e) {
+      uni.showToast({ title: e.message || '服务器地址无效', icon: 'none' })
+      return
+    }
   }
   
   const result = await roomStore.joinRoom(roomIdInput.value, playerName.value)
@@ -1039,6 +1072,13 @@ const shareToFriends = () => {
   display: block;
   font-size: 28rpx;
   color: #e0e0e0;
+  margin-bottom: 12rpx;
+}
+
+.input-tip {
+  display: block;
+  font-size: 22rpx;
+  color: #999999;
   margin-bottom: 12rpx;
 }
 
