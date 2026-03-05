@@ -28,84 +28,52 @@ export function parseQRCodeData(data) {
 export function generateQRCodeWithCanvas(canvasId, data, instance) {
   return new Promise((resolve, reject) => {
     try {
-      // #ifdef MP-WEIXIN
       const qr = new UQRCode()
       qr.data = data
       qr.size = 200
-      qr.margin = 10
+      qr.errorCorrectLevel = UQRCode.errorCorrectLevel.H
       qr.make()
       
-      const ctx = uni.createCanvasContext(canvasId, instance)
-      const size = qr.moduleCount
-      const tileSize = 200 / size
+      // #ifdef MP-WEIXIN
+      const canvasContext = uni.createCanvasContext(canvasId, instance)
+      qr.canvasContext = canvasContext
+      qr.drawCanvas()
       
-      ctx.setFillStyle('#ffffff')
-      ctx.fillRect(0, 0, 200, 200)
-      
-      for (let row = 0; row < size; row++) {
-        for (let col = 0; col < size; col++) {
-          if (qr.modules[row][col]) {
-            ctx.setFillStyle('#000000')
-            ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize)
+      setTimeout(() => {
+        uni.canvasToTempFilePath({
+          canvasId: canvasId,
+          width: 200,
+          height: 200,
+          success: (res) => {
+            resolve(res.tempFilePath)
+          },
+          fail: (err) => {
+            console.error('canvasToTempFilePath error:', err)
+            reject(err)
           }
-        }
-      }
-      
-      ctx.draw(false, () => {
-        setTimeout(() => {
-          uni.canvasToTempFilePath({
-            canvasId: canvasId,
-            width: 200,
-            height: 200,
-            success: (res) => {
-              resolve(res.tempFilePath)
-            },
-            fail: (err) => {
-              reject(err)
-            }
-          }, instance)
-        }, 200)
-      })
+        }, instance)
+      }, 500)
       // #endif
       
       // #ifdef APP-PLUS
-      const qr = new UQRCode()
-      qr.data = data
-      qr.size = 200
-      qr.margin = 10
-      qr.make()
+      const canvasContext = uni.createCanvasContext(canvasId, instance)
+      qr.canvasContext = canvasContext
+      qr.drawCanvas()
       
-      const ctx = uni.createCanvasContext(canvasId, instance)
-      const size = qr.moduleCount
-      const tileSize = 200 / size
-      
-      ctx.setFillStyle('#ffffff')
-      ctx.fillRect(0, 0, 200, 200)
-      
-      for (let row = 0; row < size; row++) {
-        for (let col = 0; col < size; col++) {
-          if (qr.modules[row][col]) {
-            ctx.setFillStyle('#000000')
-            ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize)
+      setTimeout(() => {
+        uni.canvasToTempFilePath({
+          canvasId: canvasId,
+          width: 200,
+          height: 200,
+          success: (res) => {
+            resolve(res.tempFilePath)
+          },
+          fail: (err) => {
+            console.error('canvasToTempFilePath error:', err)
+            reject(err)
           }
-        }
-      }
-      
-      ctx.draw(false, () => {
-        setTimeout(() => {
-          uni.canvasToTempFilePath({
-            canvasId: canvasId,
-            width: 200,
-            height: 200,
-            success: (res) => {
-              resolve(res.tempFilePath)
-            },
-            fail: (err) => {
-              reject(err)
-            }
-          }, instance)
-        }, 200)
-      })
+        }, instance)
+      }, 500)
       // #endif
       
       // #ifdef H5
@@ -114,26 +82,8 @@ export function generateQRCodeWithCanvas(canvasId, data, instance) {
       canvas.height = 200
       const ctx = canvas.getContext('2d')
       
-      const qr = new UQRCode()
-      qr.data = data
-      qr.size = 200
-      qr.margin = 10
-      qr.make()
-      
-      const size = qr.moduleCount
-      const tileSize = 200 / size
-      
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, 200, 200)
-      
-      for (let row = 0; row < size; row++) {
-        for (let col = 0; col < size; col++) {
-          if (qr.modules[row][col]) {
-            ctx.fillStyle = '#000000'
-            ctx.fillRect(col * tileSize, row * tileSize, tileSize, tileSize)
-          }
-        }
-      }
+      qr.canvasContext = ctx
+      qr.drawCanvas()
       
       resolve(canvas.toDataURL())
       // #endif
