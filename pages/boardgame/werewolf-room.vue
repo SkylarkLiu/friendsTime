@@ -55,7 +55,12 @@
       <!-- 顶部房间信息 -->
       <view class="room-header card">
         <view class="room-info">
-          <text class="room-id">房间号: {{ currentRoom.roomId }}</text>
+          <view class="room-id-row">
+            <text class="room-id">房间号: {{ currentRoom.roomId }}</text>
+            <button v-if="isHost" class="share-btn" @click="showShareModal = true">
+              📤 分享房间
+            </button>
+          </view>
           <text class="player-count">{{ currentRoom.players.length }}/18 人</text>
           <text class="network-status" :class="networkStatus">网络: {{ connectionStatusText }}</text>
           <view v-if="wifiInfo.isWiFi" class="wifi-info">
@@ -396,6 +401,14 @@
           </view>
         </view>
       </view>
+      <!-- 分享房间弹窗 -->
+      <ShareRoomModal 
+        :visible="showShareModal"
+        :roomId="currentRoom?.roomId || ''"
+        roomType="werewolf"
+        :serverUrl="wifiInfo.serverUrl"
+        @close="showShareModal = false"
+      />
     </view>
   </view>
 </template>
@@ -407,6 +420,7 @@ import { WerewolfGame } from '@/store/game/werewolf'
 import { getAllPresets, getPresetByPlayerCount } from '@/store/game/presets'
 import { getCampIcon } from '@/utils/werewolfConfig'
 import networkManager from '@/api/network'
+import ShareRoomModal from '@/components/ShareRoomModal.vue'
 
 const roomStore = useRoomStore()
 const game = new WerewolfGame()
@@ -419,6 +433,7 @@ const cardFlipped = ref(false)
 const currentRole = ref(null)
 const currentPlayerNumber = ref(0)
 const hasViewedRole = ref(false)
+const showShareModal = ref(false)
 
 // 游戏配置状态
 const configMode = ref('preset')
@@ -504,7 +519,7 @@ onMounted(async () => {
   const savedRoom = roomStore.loadCurrentRoom()
   if (savedRoom) {
     // 恢复玩家名称
-    if (savedRoom.players.length > 0) {
+    if (savedRoom.players && savedRoom.players.length > 0) {
       playerName.value = savedRoom.players[0].name
     }
     // 恢复胜利条件
@@ -584,7 +599,8 @@ const createRoom = async () => {
   
   try {
     await roomStore.createRoom('狼人杀房间', winCondition.value, {
-      hostName: playerName.value
+      hostName: playerName.value,
+      roomId: roomIdInput.value || undefined
     })
     uni.showToast({ title: '房间创建成功', icon: 'success' })
   } catch (e) {
@@ -1080,10 +1096,30 @@ const shareToFriends = () => {
   gap: 8rpx;
 }
 
+.room-id-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .room-id {
   font-size: 32rpx;
   font-weight: bold;
   color: #ffd700;
+}
+
+.share-btn {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8rpx;
+  padding: 8rpx 16rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  
+  &:active {
+    opacity: 0.8;
+  }
 }
 
 .player-count {

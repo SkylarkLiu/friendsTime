@@ -83,9 +83,7 @@ export const useRoomStore = defineStore('room', () => {
       isHost.value = true
       playerId.value = newPlayerId
       token.value = newToken
-      networkStatus.value = 'connecting'
-      const networkResult = await networkManager.init(true, roomIdToUse, newPlayerId, newToken)
-      networkStatus.value = networkResult.success ? 'connected' : 'disconnected'
+      networkStatus.value = 'connected'
       return newRoom
     }
 
@@ -132,22 +130,12 @@ export const useRoomStore = defineStore('room', () => {
 
   const joinRoom = async (roomId, playerName) => {
     if (USE_LOCAL_STORAGE) {
-      networkStatus.value = 'connecting'
-      const networkResult = await networkManager.init(false, roomId, generatePlayerId(), generateToken())
-      if (!networkResult.success) {
-        networkStatus.value = 'disconnected'
-        return { success: false, message: '网络连接失败: ' + (networkResult.message || '') }
-      }
       const room = await getRoom(roomId)
       if (!room) {
-        networkManager.disconnect()
-        networkStatus.value = 'disconnected'
         return { success: false, message: '房间不存在或已过期' }
       }
       const existingPlayer = room.players.find(p => p.name === playerName)
       if (existingPlayer) {
-        networkManager.disconnect()
-        networkStatus.value = 'disconnected'
         return { success: false, message: '该房间已存在同名玩家' }
       }
       const newPlayerId = generatePlayerId()
@@ -418,6 +406,8 @@ export const useRoomStore = defineStore('room', () => {
         .then((res) => {
           networkStatus.value = res.success ? 'connected' : 'disconnected'
         })
+    } else if (USE_LOCAL_STORAGE) {
+      networkStatus.value = 'connected'
     }
     return currentRoom.value
   }

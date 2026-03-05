@@ -34,7 +34,7 @@
               <text class="recent-name">{{ room.name }}</text>
               <text class="recent-id">房间码: {{ room.roomId }}</text>
             </view>
-            <text class="recent-players">{{ room.players.length }}人</text>
+            <text class="recent-players">{{ room.players ? room.players.length : 0 }}人</text>
           </view>
         </view>
       </view>
@@ -46,6 +46,9 @@
           <text class="room-name">{{ currentRoom.name }}</text>
           <view class="room-meta">
             <text class="room-id">房间码: {{ currentRoom.roomId }}</text>
+            <button v-if="isHost" class="share-btn" @click="showShareModal = true">
+              📤 分享房间
+            </button>
             <text class="room-count">{{ playerCount }}人</text>
           </view>
           <view v-if="wifiInfo.isWiFi" class="wifi-info">
@@ -235,6 +238,15 @@
         </view>
       </view>
     </view>
+    
+    <!-- 分享房间弹窗 -->
+    <ShareRoomModal 
+      :visible="showShareModal"
+      :roomId="currentRoom?.roomId || ''"
+      roomType="rank"
+      :serverUrl="wifiInfo.serverUrl"
+      @close="showShareModal = false"
+    />
   </view>
 </template>
 
@@ -243,8 +255,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoomStore } from '@/store/room'
 import networkManager from '@/api/network'
 import { getApiBaseUrl, setApiBaseUrl, clearApiBaseUrl } from '@/api/config'
+import ShareRoomModal from '@/components/ShareRoomModal.vue'
 
 const roomStore = useRoomStore()
+
+const showShareModal = ref(false)
 
 // WiFi 信息
 const wifiInfo = ref({
@@ -738,12 +753,27 @@ const copyServerUrl = () => {
 
 .room-meta {
   display: flex;
+  align-items: center;
   gap: 20rpx;
 }
 
 .room-id, .room-count {
   font-size: 24rpx;
   color: #999999;
+}
+
+.share-btn {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8rpx;
+  padding: 8rpx 16rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  
+  &:active {
+    opacity: 0.8;
+  }
 }
 
 .wifi-info {

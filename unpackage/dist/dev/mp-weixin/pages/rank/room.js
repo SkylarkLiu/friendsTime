@@ -1,10 +1,22 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const store_room = require("../../store/room.js");
+const api_network = require("../../api/network.js");
+const api_config = require("../../api/config.js");
+if (!Math) {
+  ShareRoomModal();
+}
+const ShareRoomModal = () => "../../components/ShareRoomModal.js";
 const _sfc_main = {
   __name: "room",
   setup(__props) {
     const roomStore = store_room.useRoomStore();
+    const showShareModal = common_vendor.ref(false);
+    const wifiInfo = common_vendor.ref({
+      isWiFi: false,
+      localIP: null,
+      serverUrl: ""
+    });
     const isInRoom = common_vendor.computed(() => roomStore.isInRoom);
     const currentRoom = common_vendor.computed(() => roomStore.currentRoom);
     const playerCount = common_vendor.computed(() => roomStore.playerCount);
@@ -40,8 +52,14 @@ const _sfc_main = {
     const inputScore = common_vendor.ref("");
     const inputRole = common_vendor.ref("");
     const selectedPlayer = common_vendor.ref(null);
-    common_vendor.onMounted(() => {
+    common_vendor.onMounted(async () => {
       roomStore.loadCurrentRoom();
+      try {
+        const info = await api_network.networkManager.detectWiFiAndSetServer();
+        wifiInfo.value = info;
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/rank/room.vue:320", "检测WiFi失败:", e);
+      }
     });
     const showJoinModal = () => {
       inputRoomId.value = "";
@@ -52,6 +70,33 @@ const _sfc_main = {
       inputRoomName.value = "";
       inputPlayerName.value = "";
       showCreateRoomModal.value = true;
+    };
+    const showServerConfig = () => {
+      const current = api_config.getApiBaseUrl();
+      common_vendor.index.showModal({
+        title: "服务器设置",
+        editable: true,
+        placeholderText: "例如：http://192.168.1.100:3000",
+        content: current,
+        confirmText: "保存",
+        cancelText: "取消",
+        success: (res) => {
+          if (!res.confirm)
+            return;
+          const value = (res.content || "").trim();
+          try {
+            if (!value) {
+              api_config.clearApiBaseUrl();
+              common_vendor.index.showToast({ title: "已恢复默认地址", icon: "success" });
+              return;
+            }
+            api_config.setApiBaseUrl(value);
+            common_vendor.index.showToast({ title: "已保存", icon: "success" });
+          } catch (e) {
+            common_vendor.index.showToast({ title: e.message || "地址无效", icon: "none" });
+          }
+        }
+      });
     };
     const handleCloseJoinModal = () => {
       showJoinRoomModal.value = false;
@@ -116,13 +161,21 @@ const _sfc_main = {
         });
         return;
       }
-      const room = await roomStore.createRoom(inputRoomName.value.trim());
-      await roomStore.joinRoom(room.roomId, inputPlayerName.value.trim());
-      showCreateRoomModal.value = false;
-      common_vendor.index.showToast({
-        title: "创建成功",
-        icon: "success"
-      });
+      try {
+        await roomStore.createRoom(inputRoomName.value.trim(), "slaughter_side", {
+          hostName: inputPlayerName.value.trim()
+        });
+        showCreateRoomModal.value = false;
+        common_vendor.index.showToast({
+          title: "创建成功",
+          icon: "success"
+        });
+      } catch (e) {
+        common_vendor.index.showToast({
+          title: e.message || "创建失败",
+          icon: "none"
+        });
+      }
     };
     const quickJoinRoom = async (roomId) => {
       common_vendor.index.showModal({
@@ -246,35 +299,56 @@ const _sfc_main = {
         }
       });
     };
+    const copyServerUrl = () => {
+      common_vendor.index.setClipboardData({
+        data: wifiInfo.value.serverUrl,
+        success: () => {
+          common_vendor.index.showToast({ title: "服务器地址已复制", icon: "success" });
+        }
+      });
+    };
     return (_ctx, _cache) => {
+      var _a;
       return common_vendor.e({
         a: isInRoom.value === false
       }, isInRoom.value === false ? common_vendor.e({
         b: common_vendor.o(showJoinModal),
         c: common_vendor.o(showCreateModal),
-        d: recentRooms.value.length > 0
+        d: common_vendor.o(showServerConfig),
+        e: recentRooms.value.length > 0
       }, recentRooms.value.length > 0 ? {
-        e: common_vendor.f(recentRooms.value, (room, k0, i0) => {
+        f: common_vendor.f(recentRooms.value, (room, k0, i0) => {
           return {
             a: common_vendor.t(room.name),
             b: common_vendor.t(room.roomId),
-            c: common_vendor.t(room.players.length),
+            c: common_vendor.t(room.players ? room.players.length : 0),
             d: room.roomId,
             e: common_vendor.o(($event) => quickJoinRoom(room.roomId), room.roomId)
           };
         })
       } : {}) : {}, {
-        f: isInRoom.value === true
+        g: isInRoom.value === true
       }, isInRoom.value === true ? common_vendor.e({
-        g: common_vendor.t(currentRoom.value.name),
-        h: common_vendor.t(currentRoom.value.roomId),
-        i: common_vendor.t(playerCount.value),
-        j: common_vendor.o(copyRoomId),
-        k: common_vendor.o(handleLeaveRoom),
-        l: common_vendor.o(($event) => showAddPlayerModal.value = true),
-        m: rankList.value.length > 0
+        h: common_vendor.t(currentRoom.value.name),
+        i: common_vendor.t(currentRoom.value.roomId),
+        j: _ctx.isHost
+      }, _ctx.isHost ? {
+        k: common_vendor.o(($event) => showShareModal.value = true)
+      } : {}, {
+        l: common_vendor.t(playerCount.value),
+        m: wifiInfo.value.isWiFi
+      }, wifiInfo.value.isWiFi ? {} : {}, {
+        n: common_vendor.o(copyRoomId),
+        o: common_vendor.o(handleLeaveRoom),
+        p: _ctx.isHost && wifiInfo.value.serverUrl
+      }, _ctx.isHost && wifiInfo.value.serverUrl ? {
+        q: common_vendor.t(wifiInfo.value.serverUrl),
+        r: common_vendor.o(copyServerUrl)
+      } : {}, {
+        s: common_vendor.o(($event) => showAddPlayerModal.value = true),
+        t: rankList.value.length > 0
       }, rankList.value.length > 0 ? {
-        n: common_vendor.f(rankList.value, (player, index, i0) => {
+        v: common_vendor.f(rankList.value, (player, index, i0) => {
           return common_vendor.e({
             a: index < 3
           }, index < 3 ? {
@@ -295,13 +369,13 @@ const _sfc_main = {
           });
         })
       } : {}, {
-        o: currentRoom.value.players.some((p) => p.scores.length > 0)
+        w: currentRoom.value.players.some((p) => p.scores.length > 0)
       }, currentRoom.value.players.some((p) => p.scores.length > 0) ? common_vendor.e({
-        p: common_vendor.t(showHistory.value ? "收起" : "展开"),
-        q: common_vendor.o(($event) => showHistory.value = !showHistory.value),
-        r: showHistory.value
+        x: common_vendor.t(showHistory.value ? "收起" : "展开"),
+        y: common_vendor.o(($event) => showHistory.value = !showHistory.value),
+        z: showHistory.value
       }, showHistory.value ? {
-        s: common_vendor.f(gameHistory.value, (record, k0, i0) => {
+        A: common_vendor.f(gameHistory.value, (record, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.t(record.playerName),
             b: common_vendor.t(record.game),
@@ -315,55 +389,63 @@ const _sfc_main = {
           });
         })
       } : {}) : {}) : {}, {
-        t: showJoinRoomModal.value === true
+        B: showJoinRoomModal.value === true
       }, showJoinRoomModal.value === true ? {
-        v: inputRoomId.value,
-        w: common_vendor.o(($event) => inputRoomId.value = $event.detail.value),
-        x: inputPlayerName.value,
-        y: common_vendor.o(($event) => inputPlayerName.value = $event.detail.value),
-        z: common_vendor.o(($event) => showJoinRoomModal.value = false),
-        A: common_vendor.o(handleJoinRoom),
-        B: common_vendor.o(() => {
+        C: inputRoomId.value,
+        D: common_vendor.o(($event) => inputRoomId.value = $event.detail.value),
+        E: inputPlayerName.value,
+        F: common_vendor.o(($event) => inputPlayerName.value = $event.detail.value),
+        G: common_vendor.o(($event) => showJoinRoomModal.value = false),
+        H: common_vendor.o(handleJoinRoom),
+        I: common_vendor.o(() => {
         }),
-        C: common_vendor.o(handleCloseJoinModal)
+        J: common_vendor.o(handleCloseJoinModal)
       } : {}, {
-        D: showCreateRoomModal.value === true
+        K: showCreateRoomModal.value === true
       }, showCreateRoomModal.value === true ? {
-        E: inputRoomName.value,
-        F: common_vendor.o(($event) => inputRoomName.value = $event.detail.value),
-        G: inputPlayerName.value,
-        H: common_vendor.o(($event) => inputPlayerName.value = $event.detail.value),
-        I: common_vendor.o(($event) => showCreateRoomModal.value = false),
-        J: common_vendor.o(handleCreateRoom),
-        K: common_vendor.o(() => {
-        }),
-        L: common_vendor.o(handleCloseCreateModal)
-      } : {}, {
-        M: showAddPlayerModal.value === true
-      }, showAddPlayerModal.value === true ? {
-        N: inputNewPlayerName.value,
-        O: common_vendor.o(($event) => inputNewPlayerName.value = $event.detail.value),
-        P: common_vendor.o(($event) => showAddPlayerModal.value = false),
-        Q: common_vendor.o(handleAddPlayer),
+        L: inputRoomName.value,
+        M: common_vendor.o(($event) => inputRoomName.value = $event.detail.value),
+        N: inputPlayerName.value,
+        O: common_vendor.o(($event) => inputPlayerName.value = $event.detail.value),
+        P: common_vendor.o(($event) => showCreateRoomModal.value = false),
+        Q: common_vendor.o(handleCreateRoom),
         R: common_vendor.o(() => {
         }),
-        S: common_vendor.o(handleCloseAddPlayerModal)
+        S: common_vendor.o(handleCloseCreateModal)
       } : {}, {
-        T: showScoreModal.value === true
-      }, showScoreModal.value === true ? {
-        U: common_vendor.t(selectedPlayer.value && selectedPlayer.value.name),
-        V: inputGameName.value,
-        W: common_vendor.o(($event) => inputGameName.value = $event.detail.value),
-        X: inputScore.value,
-        Y: common_vendor.o(($event) => inputScore.value = $event.detail.value),
-        Z: inputRole.value,
-        aa: common_vendor.o(($event) => inputRole.value = $event.detail.value),
-        ab: common_vendor.o(($event) => showScoreModal.value = false),
-        ac: common_vendor.o(handleAddScore),
-        ad: common_vendor.o(() => {
+        T: showAddPlayerModal.value === true
+      }, showAddPlayerModal.value === true ? {
+        U: inputNewPlayerName.value,
+        V: common_vendor.o(($event) => inputNewPlayerName.value = $event.detail.value),
+        W: common_vendor.o(($event) => showAddPlayerModal.value = false),
+        X: common_vendor.o(handleAddPlayer),
+        Y: common_vendor.o(() => {
         }),
-        ae: common_vendor.o(handleCloseScoreModal)
-      } : {});
+        Z: common_vendor.o(handleCloseAddPlayerModal)
+      } : {}, {
+        aa: showScoreModal.value === true
+      }, showScoreModal.value === true ? {
+        ab: common_vendor.t(selectedPlayer.value && selectedPlayer.value.name),
+        ac: inputGameName.value,
+        ad: common_vendor.o(($event) => inputGameName.value = $event.detail.value),
+        ae: inputScore.value,
+        af: common_vendor.o(($event) => inputScore.value = $event.detail.value),
+        ag: inputRole.value,
+        ah: common_vendor.o(($event) => inputRole.value = $event.detail.value),
+        ai: common_vendor.o(($event) => showScoreModal.value = false),
+        aj: common_vendor.o(handleAddScore),
+        ak: common_vendor.o(() => {
+        }),
+        al: common_vendor.o(handleCloseScoreModal)
+      } : {}, {
+        am: common_vendor.o(($event) => showShareModal.value = false),
+        an: common_vendor.p({
+          visible: showShareModal.value,
+          roomId: ((_a = currentRoom.value) == null ? void 0 : _a.roomId) || "",
+          roomType: "rank",
+          serverUrl: wifiInfo.value.serverUrl
+        })
+      });
     };
   }
 };

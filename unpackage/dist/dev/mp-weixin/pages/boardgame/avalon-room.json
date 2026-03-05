@@ -1,5 +1,7 @@
 {
   "navigationBarTitleText": "阿瓦隆房间",
   "enablePullDownRefresh": false,
-  "usingComponents": {}
+  "usingComponents": {
+    "share-room-modal": "../../components/ShareRoomModal"
+  }
 }

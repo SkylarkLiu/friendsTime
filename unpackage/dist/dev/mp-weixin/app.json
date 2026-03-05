@@ -2,6 +2,7 @@
   "pages": [
     "pages/splash/index",
     "pages/home/index",
+    "pages/scan-join/index",
     "pages/boardgame/index",
     "pages/boardgame/werewolf-room",
     "pages/boardgame/avalon-room",

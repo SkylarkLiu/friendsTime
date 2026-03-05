@@ -5,6 +5,10 @@ const store_game_werewolf = require("../../store/game/werewolf.js");
 const store_game_presets = require("../../store/game/presets.js");
 const utils_werewolfConfig = require("../../utils/werewolfConfig.js");
 const api_network = require("../../api/network.js");
+if (!Math) {
+  ShareRoomModal();
+}
+const ShareRoomModal = () => "../../components/ShareRoomModal.js";
 const _sfc_main = {
   __name: "werewolf-room",
   setup(__props) {
@@ -17,6 +21,7 @@ const _sfc_main = {
     const currentRole = common_vendor.ref(null);
     const currentPlayerNumber = common_vendor.ref(0);
     const hasViewedRole = common_vendor.ref(false);
+    const showShareModal = common_vendor.ref(false);
     const configMode = common_vendor.ref("preset");
     const playerCount = common_vendor.ref(9);
     const selectedPreset = common_vendor.ref(null);
@@ -24,6 +29,11 @@ const _sfc_main = {
     const showInviteModal = common_vendor.ref(false);
     const shareLink = common_vendor.ref("");
     const qrCodeUrl = common_vendor.ref("");
+    const wifiInfo = common_vendor.ref({
+      isWiFi: false,
+      localIP: null,
+      serverUrl: ""
+    });
     const networkStatus = common_vendor.computed(() => roomStore.networkStatus);
     const connectionStatusText = common_vendor.computed(() => {
       if (networkStatus.value === "connected") {
@@ -77,10 +87,10 @@ const _sfc_main = {
       const index = currentRoom.value.players.indexOf(player) % avatars.length;
       return avatars[index];
     };
-    common_vendor.onMounted(() => {
+    common_vendor.onMounted(async () => {
       const savedRoom = roomStore.loadCurrentRoom();
       if (savedRoom) {
-        if (savedRoom.players.length > 0) {
+        if (savedRoom.players && savedRoom.players.length > 0) {
           playerName.value = savedRoom.players[0].name;
         }
         if (savedRoom.winCondition) {
@@ -97,6 +107,12 @@ const _sfc_main = {
       if (defaultPreset && !selectedPreset.value) {
         selectPreset(defaultPreset);
       }
+      try {
+        const info = await api_network.networkManager.detectWiFiAndSetServer();
+        wifiInfo.value = info;
+      } catch (e) {
+        common_vendor.index.__f__("error", "at pages/boardgame/werewolf-room.vue:548", "检测WiFi失败:", e);
+      }
       registerNetworkEvents();
     });
     common_vendor.onUnmounted(() => {
@@ -104,19 +120,19 @@ const _sfc_main = {
     });
     const registerNetworkEvents = () => {
       roomStore.registerNetworkEvent("room_updated", (data) => {
-        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:517", "房间更新:", data);
+        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:564", "房间更新:", data);
       });
       roomStore.registerNetworkEvent("player_joined", (data) => {
-        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:523", "玩家加入:", data);
+        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:570", "玩家加入:", data);
       });
       roomStore.registerNetworkEvent("player_left", (data) => {
-        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:529", "玩家离开:", data);
+        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:576", "玩家离开:", data);
       });
       roomStore.registerNetworkEvent("game_started", (data) => {
-        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:535", "游戏开始:", data);
+        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:582", "游戏开始:", data);
       });
       roomStore.registerNetworkEvent("reconnect_failed", () => {
-        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:541", "重连失败");
+        common_vendor.index.__f__("log", "at pages/boardgame/werewolf-room.vue:588", "重连失败");
         common_vendor.index.showToast({ title: "网络连接失败，请重新加入房间", icon: "none" });
       });
     };
@@ -125,9 +141,15 @@ const _sfc_main = {
         common_vendor.index.showToast({ title: "请输入昵称", icon: "none" });
         return;
       }
-      await roomStore.createRoom("狼人杀房间", winCondition.value, roomIdInput.value);
-      await roomStore.addPlayer(playerName.value);
-      common_vendor.index.showToast({ title: "房间创建成功", icon: "success" });
+      try {
+        await roomStore.createRoom("狼人杀房间", winCondition.value, {
+          hostName: playerName.value,
+          roomId: roomIdInput.value || void 0
+        });
+        common_vendor.index.showToast({ title: "房间创建成功", icon: "success" });
+      } catch (e) {
+        common_vendor.index.showToast({ title: e.message || "创建失败", icon: "none" });
+      }
     };
     const joinRoom = async () => {
       if (!roomIdInput.value || !playerName.value) {
@@ -413,11 +435,19 @@ const _sfc_main = {
         }
       });
     };
+    const copyServerUrl = () => {
+      common_vendor.index.setClipboardData({
+        data: wifiInfo.value.serverUrl,
+        success: () => {
+          common_vendor.index.showToast({ title: "服务器地址已复制", icon: "success" });
+        }
+      });
+    };
     const shareToFriends = () => {
       common_vendor.index.showToast({ title: "分享功能已触发", icon: "success" });
     };
     return (_ctx, _cache) => {
-      var _a, _b, _c, _d, _e, _f, _g;
+      var _a, _b, _c, _d, _e, _f, _g, _h;
       return common_vendor.e({
         a: !isInRoom.value
       }, !isInRoom.value ? {
@@ -431,12 +461,23 @@ const _sfc_main = {
         i: !roomIdInput.value || !playerName.value
       } : common_vendor.e({
         j: common_vendor.t(currentRoom.value.roomId),
-        k: common_vendor.t(currentRoom.value.players.length),
-        l: common_vendor.t(connectionStatusText.value),
-        m: common_vendor.n(networkStatus.value),
-        n: common_vendor.t(gameStatusText.value),
-        o: gameState.value === "dealing" || gameState.value === "all_confirmed" || gameState.value === "judge_view" ? 1 : "",
-        p: common_vendor.f(currentRoom.value.players, (player, index, i0) => {
+        k: isHost.value
+      }, isHost.value ? {
+        l: common_vendor.o(($event) => showShareModal.value = true)
+      } : {}, {
+        m: common_vendor.t(currentRoom.value.players.length),
+        n: common_vendor.t(connectionStatusText.value),
+        o: common_vendor.n(networkStatus.value),
+        p: wifiInfo.value.isWiFi
+      }, wifiInfo.value.isWiFi ? {} : {}, {
+        q: common_vendor.t(gameStatusText.value),
+        r: gameState.value === "dealing" || gameState.value === "all_confirmed" || gameState.value === "judge_view" ? 1 : "",
+        s: isHost.value && wifiInfo.value.serverUrl
+      }, isHost.value && wifiInfo.value.serverUrl ? {
+        t: common_vendor.t(wifiInfo.value.serverUrl),
+        v: common_vendor.o(copyServerUrl)
+      } : {}, {
+        w: common_vendor.f(currentRoom.value.players, (player, index, i0) => {
           return common_vendor.e({
             a: common_vendor.t(getPlayerAvatar(player)),
             b: isPlayerHost(player)
@@ -467,23 +508,23 @@ const _sfc_main = {
             })
           });
         }),
-        q: isHost.value && gameState.value !== "idle",
-        r: isHost.value && gameState.value === "idle"
+        x: isHost.value && gameState.value !== "idle",
+        y: isHost.value && gameState.value === "idle"
       }, isHost.value && gameState.value === "idle" ? common_vendor.e({
-        s: common_vendor.n(winCondition.value === "slaughter_side" ? "active" : ""),
-        t: common_vendor.o(($event) => handleWinConditionChange("slaughter_side")),
-        v: common_vendor.n(winCondition.value === "slaughter_all" ? "active" : ""),
-        w: common_vendor.o(($event) => handleWinConditionChange("slaughter_all")),
-        x: common_vendor.n(configMode.value === "preset" ? "active" : ""),
-        y: common_vendor.o(($event) => configMode.value = "preset"),
-        z: common_vendor.n(configMode.value === "custom" ? "active" : ""),
-        A: common_vendor.o(($event) => configMode.value = "custom"),
-        B: configMode.value === "preset"
+        z: common_vendor.n(winCondition.value === "slaughter_side" ? "active" : ""),
+        A: common_vendor.o(($event) => handleWinConditionChange("slaughter_side")),
+        B: common_vendor.n(winCondition.value === "slaughter_all" ? "active" : ""),
+        C: common_vendor.o(($event) => handleWinConditionChange("slaughter_all")),
+        D: common_vendor.n(configMode.value === "preset" ? "active" : ""),
+        E: common_vendor.o(($event) => configMode.value = "preset"),
+        F: common_vendor.n(configMode.value === "custom" ? "active" : ""),
+        G: common_vendor.o(($event) => configMode.value = "custom"),
+        H: configMode.value === "preset"
       }, configMode.value === "preset" ? {
-        C: common_vendor.o(decreasePlayers),
-        D: common_vendor.t(playerCount.value),
-        E: common_vendor.o(increasePlayers),
-        F: common_vendor.f(availablePresets.value, (preset, k0, i0) => {
+        I: common_vendor.o(decreasePlayers),
+        J: common_vendor.t(playerCount.value),
+        K: common_vendor.o(increasePlayers),
+        L: common_vendor.f(availablePresets.value, (preset, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.t(preset.name),
             b: common_vendor.t(preset.description),
@@ -502,11 +543,11 @@ const _sfc_main = {
           });
         })
       } : {}, {
-        G: configMode.value === "custom"
+        M: configMode.value === "custom"
       }, configMode.value === "custom" ? common_vendor.e({
-        H: common_vendor.t(totalRoles.value),
-        I: common_vendor.t(playerCount.value),
-        J: common_vendor.f(roleConfig.value, (role, k0, i0) => {
+        N: common_vendor.t(totalRoles.value),
+        O: common_vendor.t(playerCount.value),
+        P: common_vendor.f(roleConfig.value, (role, k0, i0) => {
           return {
             a: common_vendor.t(role.icon),
             b: common_vendor.t(role.name),
@@ -516,46 +557,46 @@ const _sfc_main = {
             f: role.id
           };
         }),
-        K: common_vendor.t(totalRoles.value),
-        L: common_vendor.t(playerCount.value),
-        M: totalRoles.value !== playerCount.value
+        Q: common_vendor.t(totalRoles.value),
+        R: common_vendor.t(playerCount.value),
+        S: totalRoles.value !== playerCount.value
       }, totalRoles.value !== playerCount.value ? {} : {}) : {}) : {}, {
-        N: showRoleCard.value
+        T: showRoleCard.value
       }, showRoleCard.value ? {
-        O: common_vendor.t(currentPlayerNumber.value),
-        P: common_vendor.t(common_vendor.unref(utils_werewolfConfig.getCampIcon)((_a = currentRole.value) == null ? void 0 : _a.camp)),
-        Q: common_vendor.t((_b = currentRole.value) == null ? void 0 : _b.campName),
-        R: common_vendor.t((_c = currentRole.value) == null ? void 0 : _c.icon),
-        S: common_vendor.t((_d = currentRole.value) == null ? void 0 : _d.name),
-        T: common_vendor.f((_e = currentRole.value) == null ? void 0 : _e.skills, (skill, index, i0) => {
+        U: common_vendor.t(currentPlayerNumber.value),
+        V: common_vendor.t(common_vendor.unref(utils_werewolfConfig.getCampIcon)((_a = currentRole.value) == null ? void 0 : _a.camp)),
+        W: common_vendor.t((_b = currentRole.value) == null ? void 0 : _b.campName),
+        X: common_vendor.t((_c = currentRole.value) == null ? void 0 : _c.icon),
+        Y: common_vendor.t((_d = currentRole.value) == null ? void 0 : _d.name),
+        Z: common_vendor.f((_e = currentRole.value) == null ? void 0 : _e.skills, (skill, index, i0) => {
           return {
             a: common_vendor.t(skill),
             b: index
           };
         }),
-        U: common_vendor.t((_f = currentRole.value) == null ? void 0 : _f.strategy),
-        V: common_vendor.n({
+        aa: common_vendor.t((_f = currentRole.value) == null ? void 0 : _f.strategy),
+        ab: common_vendor.n({
           "flipped": cardFlipped.value
         }),
-        W: ((_g = currentRole.value) == null ? void 0 : _g.color) || "#666666",
-        X: common_vendor.o(confirmRole),
-        Y: common_vendor.o(() => {
+        ac: ((_g = currentRole.value) == null ? void 0 : _g.color) || "#666666",
+        ad: common_vendor.o(confirmRole),
+        ae: common_vendor.o(() => {
         }),
-        Z: common_vendor.o(closeRoleCard)
+        af: common_vendor.o(closeRoleCard)
       } : {}, {
-        aa: showResultModal.value
+        ag: showResultModal.value
       }, showResultModal.value ? common_vendor.e({
-        ab: gameResult.value === "wolf_win"
+        ah: gameResult.value === "wolf_win"
       }, gameResult.value === "wolf_win" ? {} : gameResult.value === "good_win" ? {} : gameResult.value === "idiot_win" ? {} : {}, {
-        ac: gameResult.value === "good_win",
-        ad: gameResult.value === "idiot_win",
-        ae: gameResult.value === "wolf_win"
+        ai: gameResult.value === "good_win",
+        aj: gameResult.value === "idiot_win",
+        ak: gameResult.value === "wolf_win"
       }, gameResult.value === "wolf_win" ? {
-        af: common_vendor.t(currentRoom.value.winCondition === "slaughter_side" ? '成功达成"屠边"条件' : '成功达成"屠城"条件')
+        al: common_vendor.t(currentRoom.value.winCondition === "slaughter_side" ? '成功达成"屠边"条件' : '成功达成"屠城"条件')
       } : gameResult.value === "good_win" ? {} : gameResult.value === "idiot_win" ? {} : {}, {
-        ag: gameResult.value === "good_win",
-        ah: gameResult.value === "idiot_win",
-        ai: common_vendor.f(currentRoom.value.players, (player, k0, i0) => {
+        am: gameResult.value === "good_win",
+        an: gameResult.value === "idiot_win",
+        ao: common_vendor.f(currentRoom.value.players, (player, k0, i0) => {
           var _a2;
           return common_vendor.e({
             a: common_vendor.t(player.name),
@@ -569,41 +610,49 @@ const _sfc_main = {
             g: player.id
           });
         }),
-        aj: common_vendor.o(backToRoom),
-        ak: common_vendor.o(playAgain),
-        al: common_vendor.o(() => {
+        ap: common_vendor.o(backToRoom),
+        aq: common_vendor.o(playAgain),
+        ar: common_vendor.o(() => {
         }),
-        am: common_vendor.o(backToRoom)
+        as: common_vendor.o(backToRoom)
       }) : {}, {
-        an: isHost.value
+        at: isHost.value
       }, isHost.value ? {
-        ao: common_vendor.o(startGame),
-        ap: gameState.value !== "idle" || currentRoom.value.players.length < 6 || configMode.value === "custom" && totalRoles.value !== playerCount.value
+        av: common_vendor.o(startGame),
+        aw: gameState.value !== "idle" || currentRoom.value.players.length < 6 || configMode.value === "custom" && totalRoles.value !== playerCount.value
       } : {}, {
-        aq: isHost.value && gameState.value === "idle"
+        ax: isHost.value && gameState.value === "idle"
       }, isHost.value && gameState.value === "idle" ? {
-        ar: common_vendor.o(openInviteModal)
+        ay: common_vendor.o(openInviteModal)
       } : {
-        as: common_vendor.o(viewMyRole),
-        at: gameState.value === "idle" || hasViewedRole.value
+        az: common_vendor.o(viewMyRole),
+        aA: gameState.value === "idle" || hasViewedRole.value
       }, {
-        av: isHost.value && (gameState.value === "dealing" || gameState.value === "all_confirmed" || gameState.value === "judge_view")
+        aB: isHost.value && (gameState.value === "dealing" || gameState.value === "all_confirmed" || gameState.value === "judge_view")
       }, isHost.value && (gameState.value === "dealing" || gameState.value === "all_confirmed" || gameState.value === "judge_view") ? {
-        aw: common_vendor.o(resetGame)
+        aC: common_vendor.o(resetGame)
       } : {}, {
-        ax: common_vendor.o(leaveRoom),
-        ay: showInviteModal.value
+        aD: common_vendor.o(leaveRoom),
+        aE: showInviteModal.value
       }, showInviteModal.value ? {
-        az: common_vendor.t(currentRoom.value.roomId),
-        aA: common_vendor.t(qrCodeUrl.value),
-        aB: common_vendor.t(shareLink.value),
-        aC: common_vendor.o(copyShareLink),
-        aD: common_vendor.o(closeInviteModal),
-        aE: common_vendor.o(shareToFriends),
-        aF: common_vendor.o(() => {
+        aF: common_vendor.t(currentRoom.value.roomId),
+        aG: common_vendor.t(qrCodeUrl.value),
+        aH: common_vendor.t(shareLink.value),
+        aI: common_vendor.o(copyShareLink),
+        aJ: common_vendor.o(closeInviteModal),
+        aK: common_vendor.o(shareToFriends),
+        aL: common_vendor.o(() => {
         }),
-        aG: common_vendor.o(closeInviteModal)
-      } : {}));
+        aM: common_vendor.o(closeInviteModal)
+      } : {}, {
+        aN: common_vendor.o(($event) => showShareModal.value = false),
+        aO: common_vendor.p({
+          visible: showShareModal.value,
+          roomId: ((_h = currentRoom.value) == null ? void 0 : _h.roomId) || "",
+          roomType: "werewolf",
+          serverUrl: wifiInfo.value.serverUrl
+        })
+      }));
     };
   }
 };

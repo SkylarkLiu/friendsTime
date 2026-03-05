@@ -4,6 +4,7 @@ const common_vendor = require("./common/vendor.js");
 if (!Math) {
   "./pages/splash/index.js";
   "./pages/home/index.js";
+  "./pages/scan-join/index.js";
   "./pages/boardgame/index.js";
   "./pages/boardgame/werewolf-room.js";
   "./pages/boardgame/avalon-room.js";
