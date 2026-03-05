@@ -39,7 +39,23 @@
       "kernel": "WKWebview"
     },
     "distribute": {
+      "google": {
+        "icons": {
+          "mdpi": "static/android/mipmap-mdpi/ic_launcher.png",
+          "hdpi": "static/android/mipmap-hdpi/ic_launcher.png",
+          "xhdpi": "static/android/mipmap-xhdpi/ic_launcher.png",
+          "xxhdpi": "static/android/mipmap-xxhdpi/ic_launcher.png",
+          "xxxhdpi": "static/android/mipmap-xxxhdpi/ic_launcher.png"
+        }
+      },
       "apple": {
+        "icons": {
+          "normal": "unpackage/res/icons/57x57.png",
+          "retina": "unpackage/res/icons/114x114.png",
+          "retina8": "unpackage/res/icons/120x120.png",
+          "retina9": "unpackage/res/icons/180x180.png",
+          "retina11": "unpackage/res/icons/1024x1024.png"
+        },
         "dSYMs": false
       },
       "plugins": {
