@@ -14,6 +14,9 @@ const _sfc_main = {
       { value: 1, isRolling: false },
       { value: 1, isRolling: false }
     ]);
+    const visibleDiceList = common_vendor.computed(() => {
+      return diceList.value.slice(0, diceCount.value);
+    });
     const totalValue = common_vendor.computed(() => {
       let total = 0;
       for (let i = 0; i < diceCount.value; i++) {
@@ -37,8 +40,8 @@ const _sfc_main = {
         return;
       isRolling.value = true;
       showResult.value = false;
-      for (let i = 0; i < 6; i++) {
-        diceList.value[i].isRolling = i < diceCount.value;
+      for (let i = 0; i < diceCount.value; i++) {
+        diceList.value[i].isRolling = true;
       }
       const rollDurations = [];
       for (let i = 0; i < diceCount.value; i++) {
@@ -79,7 +82,7 @@ const _sfc_main = {
             d: common_vendor.o(($event) => diceCount.value = i, i)
           };
         }),
-        b: common_vendor.f(diceList.value, (dice, index, i0) => {
+        b: common_vendor.f(visibleDiceList.value, (dice, index, i0) => {
           return {
             a: common_vendor.f(9, (dotPos, k1, i1) => {
               return {
@@ -95,7 +98,7 @@ const _sfc_main = {
         c: showResult.value && !isRolling.value
       }, showResult.value && !isRolling.value ? {
         d: common_vendor.t(totalValue.value),
-        e: common_vendor.f(diceList.value, (dice, index, i0) => {
+        e: common_vendor.f(visibleDiceList.value, (dice, index, i0) => {
           return {
             a: common_vendor.t(index + 1),
             b: common_vendor.t(dice.value),

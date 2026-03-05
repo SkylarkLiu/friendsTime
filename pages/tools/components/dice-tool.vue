@@ -21,7 +21,7 @@
     <view class="dice-display">
       <view 
         class="dice" 
-        v-for="(dice, index) in diceList" 
+        v-for="(dice, index) in visibleDiceList" 
         :key="index"
         :class="{ rolling: dice.isRolling }"
         :style="{ animationDelay: `${index * 0.05}s` }"
@@ -41,7 +41,7 @@
       <text class="result-label">点数总和</text>
       <text class="result-value">{{ totalValue }}</text>
       <view class="detail-values">
-        <text class="detail-item" v-for="(dice, index) in diceList" :key="index">
+        <text class="detail-item" v-for="(dice, index) in visibleDiceList" :key="index">
           骰子{{ index + 1 }}: {{ dice.value }}
         </text>
       </view>
@@ -68,6 +68,10 @@ const diceList = ref([
   { value: 1, isRolling: false },
   { value: 1, isRolling: false }
 ])
+
+const visibleDiceList = computed(() => {
+  return diceList.value.slice(0, diceCount.value)
+})
 
 const totalValue = computed(() => {
   let total = 0
@@ -96,8 +100,8 @@ const rollDice = () => {
   isRolling.value = true
   showResult.value = false
   
-  for (let i = 0; i < 6; i++) {
-    diceList.value[i].isRolling = i < diceCount.value
+  for (let i = 0; i < diceCount.value; i++) {
+    diceList.value[i].isRolling = true
   }
   
   const rollDurations = []
@@ -209,7 +213,7 @@ watch(diceCount, () => {
   justify-content: center;
   flex-wrap: wrap;
   gap: 20rpx;
-  min-height: 160rpx;
+  min-height: 120rpx;
   margin-bottom: 30rpx;
   padding: 20rpx;
 }
@@ -267,7 +271,7 @@ watch(diceCount, () => {
 .dot {
   width: 16rpx;
   height: 16rpx;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: #333333;
   border-radius: 50%;
   opacity: 0;
   transition: opacity 0.1s, transform 0.1s;
