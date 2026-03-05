@@ -1,110 +1,186 @@
 <template>
   <view class="anonymous-chat">
-    <!-- 顶部信息栏 -->
-    <view class="header">
-      <text class="header-title">匿名吐槽墙</text>
-      <text class="header-desc">匿名发言，畅所欲言</text>
+    <!-- 房间入口界面 -->
+    <view v-if="!isInRoom" class="room-entry">
+      <view class="entry-card">
+        <text class="entry-title">🎭 匿名吐槽墙</text>
+        <text class="entry-desc">匿名发言，畅所欲言</text>
+        
+        <view class="input-section">
+          <text class="input-label">房间号</text>
+          <view class="input-group">
+            <input 
+              v-model="roomIdInput" 
+              type="number" 
+              placeholder="输入6位房间号" 
+              class="input-field"
+              maxlength="6"
+            />
+          </view>
+        </view>
+        
+        <view class="input-section">
+          <text class="input-label">房间地址</text>
+          <text class="input-tip">（玩家请确保与房主一致并连接至同一WIFI）</text>
+          <view class="input-group">
+            <input 
+              v-model="serverAddress" 
+              type="text" 
+              placeholder="例如：http://192.168.1.100:3000" 
+              class="input-field"
+            />
+          </view>
+        </view>
+        
+        <view class="button-group">
+          <button 
+            class="btn-primary" 
+            @click="createRoom"
+          >
+            创建房间
+          </button>
+          <button 
+            class="btn-secondary" 
+            @click="joinRoom"
+            :disabled="!roomIdInput"
+          >
+            加入房间
+          </button>
+        </view>
+      </view>
     </view>
     
-    <!-- 消息列表 -->
-    <scroll-view 
-      class="message-list" 
-      scroll-y 
-      :scroll-top="scrollTop"
-      @scrolltoupper="loadMoreMessages"
-    >
-      <view class="message-item" v-for="msg in messageList" :key="msg.id">
-        <view class="message-header">
-          <view class="avatar">
-            <text class="avatar-icon">{{ getAvatarIcon(msg.avatarIndex) }}</text>
-          </view>
-          <text class="nickname">{{ msg.nickname }}</text>
-          <text class="time">{{ formatTime(msg.createTime) }}</text>
+    <!-- 聊天界面 -->
+    <view v-else class="chat-content">
+      <!-- 顶部信息栏 -->
+      <view class="header">
+        <view class="header-left">
+          <text class="header-title">🎭 匿名吐槽墙</text>
+          <text class="header-room">房间: {{ currentRoomId }}</text>
         </view>
-        
-        <view class="message-content">
-          <text class="content-text">{{ msg.content }}</text>
-        </view>
-        
-        <view class="message-actions">
-          <view class="action-item" @click="likeMessage(msg.id)">
-            <text class="action-icon">👍</text>
-            <text class="action-count">{{ msg.likes }}</text>
-          </view>
-          <view class="action-item" @click="dislikeMessage(msg.id)">
-            <text class="action-icon">👎</text>
-            <text class="action-count">{{ msg.dislikes }}</text>
-          </view>
-          <view class="action-item" @click="showReplyInput(msg.id)">
-            <text class="action-icon">💬</text>
-            <text class="action-count">{{ msg.replies?.length || 0 }}</text>
-          </view>
-        </view>
-        
-        <!-- 回复列表 -->
-        <view class="replies-section" v-if="msg.replies && msg.replies.length > 0">
-          <view class="reply-item" v-for="reply in msg.replies" :key="reply.id">
-            <view class="reply-header">
-              <text class="reply-avatar">{{ getAvatarIcon(reply.avatarIndex) }}</text>
-              <text class="reply-nickname">{{ reply.nickname }}</text>
-              <text class="reply-time">{{ formatTime(reply.createTime) }}</text>
-            </view>
-            <text class="reply-content">{{ reply.content }}</text>
-          </view>
+        <view class="header-right">
+          <button class="leave-btn" @click="leaveRoom">退出</button>
         </view>
       </view>
       
-      <view class="empty-state" v-if="messageList.length === 0">
-        <text class="empty-icon">💭</text>
-        <text class="empty-text">还没有人吐槽，快来抢沙发吧！</text>
+      <!-- 消息列表 -->
+      <scroll-view 
+        class="message-list" 
+        scroll-y 
+        :scroll-top="scrollTop"
+        @scrolltoupper="loadMoreMessages"
+      >
+        <view class="message-item" v-for="msg in messageList" :key="msg.id">
+          <view class="message-header">
+            <view class="avatar">
+              <text class="avatar-icon">{{ getAvatarIcon(msg.avatarIndex) }}</text>
+            </view>
+            <text class="nickname">{{ msg.nickname }}</text>
+            <text class="time">{{ formatTime(msg.createTime) }}</text>
+          </view>
+          
+          <view class="message-content">
+            <text class="content-text">{{ msg.content }}</text>
+          </view>
+          
+          <view class="message-actions">
+            <view class="action-item" @click="likeMessage(msg.id)">
+              <text class="action-icon">👍</text>
+              <text class="action-count">{{ msg.likes }}</text>
+            </view>
+            <view class="action-item" @click="dislikeMessage(msg.id)">
+              <text class="action-icon">👎</text>
+              <text class="action-count">{{ msg.dislikes }}</text>
+            </view>
+            <view class="action-item" @click="showReplyInput(msg.id)">
+              <text class="action-icon">💬</text>
+              <text class="action-count">{{ msg.replies?.length || 0 }}</text>
+            </view>
+          </view>
+          
+          <!-- 回复列表 -->
+          <view class="replies-section" v-if="msg.replies && msg.replies.length > 0">
+            <view class="reply-item" v-for="reply in msg.replies" :key="reply.id">
+              <view class="reply-header">
+                <text class="reply-avatar">{{ getAvatarIcon(reply.avatarIndex) }}</text>
+                <text class="reply-nickname">{{ reply.nickname }}</text>
+                <text class="reply-time">{{ formatTime(reply.createTime) }}</text>
+              </view>
+              <text class="reply-content">{{ reply.content }}</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="empty-state" v-if="messageList.length === 0">
+          <text class="empty-icon">💭</text>
+          <text class="empty-text">还没有人吐槽，快来抢沙发吧！</text>
+        </view>
+      </scroll-view>
+      
+      <!-- 回复输入框 -->
+      <view class="reply-input-bar" v-if="replyingTo">
+        <input 
+          class="reply-input" 
+          v-model="replyContent" 
+          placeholder="输入回复内容..." 
+          :focus="replyInputFocus"
+          @blur="hideReplyInput"
+          @confirm="submitReply"
+        />
+        <button class="send-btn" @click="submitReply">发送</button>
       </view>
-    </scroll-view>
-    
-    <!-- 回复输入框 -->
-    <view class="reply-input-bar" v-if="replyingTo">
-      <input 
-        class="reply-input" 
-        v-model="replyContent" 
-        placeholder="输入回复内容..." 
-        :focus="replyInputFocus"
-        @blur="hideReplyInput"
-        @confirm="submitReply"
-      />
-      <button class="send-btn" @click="submitReply">发送</button>
-    </view>
-    
-    <!-- 底部输入栏 -->
-    <view class="input-bar" v-else>
-      <input 
-        class="message-input" 
-        v-model="inputContent" 
-        placeholder="匿名吐槽一下..." 
-        :maxlength="500"
-      />
-      <button class="send-btn" @click="sendMessage" :disabled="!inputContent.trim()">
-        发送
-      </button>
+      
+      <!-- 底部输入栏 -->
+      <view class="input-bar" v-else>
+        <input 
+          class="message-input" 
+          v-model="inputContent" 
+          placeholder="匿名吐槽一下..." 
+          :maxlength="500"
+        />
+        <button class="send-btn" @click="sendMessage" :disabled="!inputContent.trim()">
+          发送
+        </button>
+      </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed } from 'vue'
 import { getStorage, setStorage } from '@/utils/storage'
+import { getApiBaseUrl, setApiBaseUrl } from '@/api/config'
 
 const MESSAGES_STORAGE_KEY = 'anonymous_messages'
+const CURRENT_ROOM_KEY = 'anonymous_current_room'
+
+const roomIdInput = ref('')
+const serverAddress = ref(getApiBaseUrl())
+const currentRoomId = ref('')
+const isInRoom = ref(false)
 
 const inputContent = ref('')
 const replyContent = ref('')
 const replyingTo = ref(null)
 const replyInputFocus = ref(false)
 const scrollTop = ref(0)
-const messageList = ref([])
+const allMessages = ref([])
 
 const avatarIcons = ['🎭', '🐱', '🐶', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦅', '🐴', '🦄']
 
+const messageList = computed(() => {
+  if (!currentRoomId.value) return []
+  return allMessages.value
+    .filter(msg => msg.roomId === currentRoomId.value)
+    .sort((a, b) => b.createTime - a.createTime)
+})
+
 const getAvatarIcon = (index) => {
   return avatarIcons[index % avatarIcons.length]
+}
+
+const generateRoomId = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
 const generateNickname = () => {
@@ -138,11 +214,69 @@ const formatTime = (timestamp) => {
 
 const loadMessages = () => {
   const messages = getStorage(MESSAGES_STORAGE_KEY) || []
-  messageList.value = messages.sort((a, b) => b.createTime - a.createTime)
+  allMessages.value = messages
 }
 
 const saveMessages = () => {
-  setStorage(MESSAGES_STORAGE_KEY, messageList.value)
+  setStorage(MESSAGES_STORAGE_KEY, allMessages.value)
+}
+
+const loadCurrentRoom = () => {
+  const roomData = getStorage(CURRENT_ROOM_KEY)
+  if (roomData && roomData.roomId) {
+    currentRoomId.value = roomData.roomId
+    isInRoom.value = true
+  }
+}
+
+const saveCurrentRoom = () => {
+  setStorage(CURRENT_ROOM_KEY, { roomId: currentRoomId.value })
+}
+
+const createRoom = () => {
+  if (serverAddress.value) {
+    try {
+      setApiBaseUrl(serverAddress.value)
+    } catch (e) {
+      uni.showToast({ title: e.message || '服务器地址无效', icon: 'none' })
+      return
+    }
+  }
+  
+  const roomId = roomIdInput.value || generateRoomId()
+  currentRoomId.value = roomId
+  isInRoom.value = true
+  saveCurrentRoom()
+  
+  uni.showToast({ title: '房间创建成功', icon: 'success' })
+}
+
+const joinRoom = () => {
+  if (!roomIdInput.value) {
+    uni.showToast({ title: '请输入房间号', icon: 'none' })
+    return
+  }
+  
+  if (serverAddress.value) {
+    try {
+      setApiBaseUrl(serverAddress.value)
+    } catch (e) {
+      uni.showToast({ title: e.message || '服务器地址无效', icon: 'none' })
+      return
+    }
+  }
+  
+  currentRoomId.value = roomIdInput.value
+  isInRoom.value = true
+  saveCurrentRoom()
+  
+  uni.showToast({ title: '加入房间成功', icon: 'success' })
+}
+
+const leaveRoom = () => {
+  currentRoomId.value = ''
+  isInRoom.value = false
+  setStorage(CURRENT_ROOM_KEY, null)
 }
 
 const sendMessage = () => {
@@ -150,6 +284,7 @@ const sendMessage = () => {
   
   const message = {
     id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    roomId: currentRoomId.value,
     content: inputContent.value.trim(),
     nickname: generateNickname(),
     avatarIndex: Math.floor(Math.random() * avatarIcons.length),
@@ -159,7 +294,7 @@ const sendMessage = () => {
     createTime: Date.now()
   }
   
-  messageList.value.unshift(message)
+  allMessages.value.push(message)
   saveMessages()
   
   inputContent.value = ''
@@ -168,7 +303,7 @@ const sendMessage = () => {
 }
 
 const likeMessage = (msgId) => {
-  const msg = messageList.value.find(m => m.id === msgId)
+  const msg = allMessages.value.find(m => m.id === msgId)
   if (msg) {
     msg.likes++
     saveMessages()
@@ -176,7 +311,7 @@ const likeMessage = (msgId) => {
 }
 
 const dislikeMessage = (msgId) => {
-  const msg = messageList.value.find(m => m.id === msgId)
+  const msg = allMessages.value.find(m => m.id === msgId)
   if (msg) {
     msg.dislikes++
     saveMessages()
@@ -200,7 +335,7 @@ const hideReplyInput = () => {
 const submitReply = () => {
   if (!replyContent.value.trim() || !replyingTo.value) return
   
-  const msg = messageList.value.find(m => m.id === replyingTo.value)
+  const msg = allMessages.value.find(m => m.id === replyingTo.value)
   if (msg) {
     if (!msg.replies) {
       msg.replies = []
@@ -229,6 +364,7 @@ const loadMoreMessages = () => {
 }
 
 loadMessages()
+loadCurrentRoom()
 </script>
 
 <style lang="scss" scoped>
@@ -239,31 +375,169 @@ loadMessages()
   flex-direction: column;
 }
 
+/* 房间入口样式 */
+.room-entry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 30rpx;
+}
+
+.entry-card {
+  width: 100%;
+  max-width: 600rpx;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10rpx);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+}
+
+.entry-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333333;
+  text-align: center;
+  margin-bottom: 10rpx;
+}
+
+.entry-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #999999;
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.input-section {
+  margin-bottom: 30rpx;
+}
+
+.input-label {
+  display: block;
+  font-size: 28rpx;
+  color: #333333;
+  margin-bottom: 12rpx;
+}
+
+.input-tip {
+  display: block;
+  font-size: 22rpx;
+  color: #999999;
+  margin-bottom: 12rpx;
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-field {
+  width: 100%;
+  padding: 24rpx;
+  background: #f8f9ff;
+  border: 2rpx solid #e8e8e8;
+  border-radius: 12rpx;
+  color: #333333;
+  font-size: 28rpx;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    border-color: #fa709a;
+    box-shadow: 0 0 20rpx rgba(250, 112, 154, 0.2);
+  }
+  
+  &::placeholder {
+    color: #999999;
+  }
+}
+
+.button-group {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 40rpx;
+}
+
+.btn-primary, .btn-secondary {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 16rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #666666;
+  
+  &[disabled] {
+    opacity: 0.5;
+  }
+}
+
+/* 聊天界面样式 */
+.chat-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .header {
   background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-  padding: 40rpx 30rpx;
-  text-align: center;
+  padding: 30rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  flex: 1;
 }
 
 .header-title {
   display: block;
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: bold;
   color: #ffffff;
   text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
 }
 
-.header-desc {
+.header-room {
   display: block;
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.header-right {
+  margin-left: 20rpx;
+}
+
+.leave-btn {
+  padding: 12rpx 24rpx;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #ffffff;
+  
+  &:active {
+    background: rgba(255, 255, 255, 0.4);
+  }
 }
 
 .message-list {
   flex: 1;
   padding: 20rpx;
-  height: calc(100vh - 280rpx);
+  height: calc(100vh - 320rpx);
 }
 
 .message-item {

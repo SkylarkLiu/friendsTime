@@ -1,19 +1,33 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const utils_storage = require("../../utils/storage.js");
+const api_config = require("../../api/config.js");
 const MESSAGES_STORAGE_KEY = "anonymous_messages";
+const CURRENT_ROOM_KEY = "anonymous_current_room";
 const _sfc_main = {
   __name: "anonymous",
   setup(__props) {
+    const roomIdInput = common_vendor.ref("");
+    const serverAddress = common_vendor.ref(api_config.getApiBaseUrl());
+    const currentRoomId = common_vendor.ref("");
+    const isInRoom = common_vendor.ref(false);
     const inputContent = common_vendor.ref("");
     const replyContent = common_vendor.ref("");
     const replyingTo = common_vendor.ref(null);
     const replyInputFocus = common_vendor.ref(false);
     const scrollTop = common_vendor.ref(0);
-    const messageList = common_vendor.ref([]);
+    const allMessages = common_vendor.ref([]);
     const avatarIcons = ["🎭", "🐱", "🐶", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🦆", "🦅", "🐴", "🦄"];
+    const messageList = common_vendor.computed(() => {
+      if (!currentRoomId.value)
+        return [];
+      return allMessages.value.filter((msg) => msg.roomId === currentRoomId.value).sort((a, b) => b.createTime - a.createTime);
+    });
     const getAvatarIcon = (index) => {
       return avatarIcons[index % avatarIcons.length];
+    };
+    const generateRoomId = () => {
+      return Math.floor(1e5 + Math.random() * 9e5).toString();
     };
     const generateNickname = () => {
       const adjectives = ["神秘的", "路过的", "匿名的", "隐藏的", "悄悄的", "偷偷的", "隐身的", "神秘的"];
@@ -43,16 +57,65 @@ const _sfc_main = {
     };
     const loadMessages = () => {
       const messages = utils_storage.getStorage(MESSAGES_STORAGE_KEY) || [];
-      messageList.value = messages.sort((a, b) => b.createTime - a.createTime);
+      allMessages.value = messages;
     };
     const saveMessages = () => {
-      utils_storage.setStorage(MESSAGES_STORAGE_KEY, messageList.value);
+      utils_storage.setStorage(MESSAGES_STORAGE_KEY, allMessages.value);
+    };
+    const loadCurrentRoom = () => {
+      const roomData = utils_storage.getStorage(CURRENT_ROOM_KEY);
+      if (roomData && roomData.roomId) {
+        currentRoomId.value = roomData.roomId;
+        isInRoom.value = true;
+      }
+    };
+    const saveCurrentRoom = () => {
+      utils_storage.setStorage(CURRENT_ROOM_KEY, { roomId: currentRoomId.value });
+    };
+    const createRoom = () => {
+      if (serverAddress.value) {
+        try {
+          api_config.setApiBaseUrl(serverAddress.value);
+        } catch (e) {
+          common_vendor.index.showToast({ title: e.message || "服务器地址无效", icon: "none" });
+          return;
+        }
+      }
+      const roomId = roomIdInput.value || generateRoomId();
+      currentRoomId.value = roomId;
+      isInRoom.value = true;
+      saveCurrentRoom();
+      common_vendor.index.showToast({ title: "房间创建成功", icon: "success" });
+    };
+    const joinRoom = () => {
+      if (!roomIdInput.value) {
+        common_vendor.index.showToast({ title: "请输入房间号", icon: "none" });
+        return;
+      }
+      if (serverAddress.value) {
+        try {
+          api_config.setApiBaseUrl(serverAddress.value);
+        } catch (e) {
+          common_vendor.index.showToast({ title: e.message || "服务器地址无效", icon: "none" });
+          return;
+        }
+      }
+      currentRoomId.value = roomIdInput.value;
+      isInRoom.value = true;
+      saveCurrentRoom();
+      common_vendor.index.showToast({ title: "加入房间成功", icon: "success" });
+    };
+    const leaveRoom = () => {
+      currentRoomId.value = "";
+      isInRoom.value = false;
+      utils_storage.setStorage(CURRENT_ROOM_KEY, null);
     };
     const sendMessage = () => {
       if (!inputContent.value.trim())
         return;
       const message = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        roomId: currentRoomId.value,
         content: inputContent.value.trim(),
         nickname: generateNickname(),
         avatarIndex: Math.floor(Math.random() * avatarIcons.length),
@@ -61,20 +124,20 @@ const _sfc_main = {
         replies: [],
         createTime: Date.now()
       };
-      messageList.value.unshift(message);
+      allMessages.value.push(message);
       saveMessages();
       inputContent.value = "";
       common_vendor.index.showToast({ title: "吐槽成功", icon: "success" });
     };
     const likeMessage = (msgId) => {
-      const msg = messageList.value.find((m) => m.id === msgId);
+      const msg = allMessages.value.find((m) => m.id === msgId);
       if (msg) {
         msg.likes++;
         saveMessages();
       }
     };
     const dislikeMessage = (msgId) => {
-      const msg = messageList.value.find((m) => m.id === msgId);
+      const msg = allMessages.value.find((m) => m.id === msgId);
       if (msg) {
         msg.dislikes++;
         saveMessages();
@@ -95,7 +158,7 @@ const _sfc_main = {
     const submitReply = () => {
       if (!replyContent.value.trim() || !replyingTo.value)
         return;
-      const msg = messageList.value.find((m) => m.id === replyingTo.value);
+      const msg = allMessages.value.find((m) => m.id === replyingTo.value);
       if (msg) {
         if (!msg.replies) {
           msg.replies = [];
@@ -118,9 +181,22 @@ const _sfc_main = {
       common_vendor.index.showToast({ title: "没有更多了", icon: "none" });
     };
     loadMessages();
+    loadCurrentRoom();
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_vendor.f(messageList.value, (msg, k0, i0) => {
+        a: !isInRoom.value
+      }, !isInRoom.value ? {
+        b: roomIdInput.value,
+        c: common_vendor.o(($event) => roomIdInput.value = $event.detail.value),
+        d: serverAddress.value,
+        e: common_vendor.o(($event) => serverAddress.value = $event.detail.value),
+        f: common_vendor.o(createRoom),
+        g: common_vendor.o(joinRoom),
+        h: !roomIdInput.value
+      } : common_vendor.e({
+        i: common_vendor.t(currentRoomId.value),
+        j: common_vendor.o(leaveRoom),
+        k: common_vendor.f(messageList.value, (msg, k0, i0) => {
           var _a;
           return common_vendor.e({
             a: common_vendor.t(getAvatarIcon(msg.avatarIndex)),
@@ -148,24 +224,24 @@ const _sfc_main = {
             m: msg.id
           });
         }),
-        b: messageList.value.length === 0
+        l: messageList.value.length === 0
       }, messageList.value.length === 0 ? {} : {}, {
-        c: scrollTop.value,
-        d: common_vendor.o(loadMoreMessages),
-        e: replyingTo.value
+        m: scrollTop.value,
+        n: common_vendor.o(loadMoreMessages),
+        o: replyingTo.value
       }, replyingTo.value ? {
-        f: replyInputFocus.value,
-        g: common_vendor.o(hideReplyInput),
-        h: common_vendor.o(submitReply),
-        i: replyContent.value,
-        j: common_vendor.o(($event) => replyContent.value = $event.detail.value),
-        k: common_vendor.o(submitReply)
+        p: replyInputFocus.value,
+        q: common_vendor.o(hideReplyInput),
+        r: common_vendor.o(submitReply),
+        s: replyContent.value,
+        t: common_vendor.o(($event) => replyContent.value = $event.detail.value),
+        v: common_vendor.o(submitReply)
       } : {
-        l: inputContent.value,
-        m: common_vendor.o(($event) => inputContent.value = $event.detail.value),
-        n: common_vendor.o(sendMessage),
-        o: !inputContent.value.trim()
-      });
+        w: inputContent.value,
+        x: common_vendor.o(($event) => inputContent.value = $event.detail.value),
+        y: common_vendor.o(sendMessage),
+        z: !inputContent.value.trim()
+      }));
     };
   }
 };

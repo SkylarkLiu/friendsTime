@@ -4,62 +4,108 @@ const _sfc_main = {
   __name: "dice-tool",
   setup(__props) {
     const diceCount = common_vendor.ref(1);
-    const diceValues = common_vendor.ref([1]);
     const isRolling = common_vendor.ref(false);
     const showResult = common_vendor.ref(false);
+    const diceList = common_vendor.ref([
+      { value: 1, isRolling: false },
+      { value: 1, isRolling: false },
+      { value: 1, isRolling: false },
+      { value: 1, isRolling: false },
+      { value: 1, isRolling: false },
+      { value: 1, isRolling: false }
+    ]);
     const totalValue = common_vendor.computed(() => {
-      return diceValues.value.reduce((sum, val) => sum + val, 0);
+      let total = 0;
+      for (let i = 0; i < diceCount.value; i++) {
+        total += diceList.value[i].value;
+      }
+      return total;
     });
+    const dotPatterns = {
+      1: [5],
+      2: [1, 9],
+      3: [1, 5, 9],
+      4: [1, 3, 7, 9],
+      5: [1, 3, 5, 7, 9],
+      6: [1, 3, 4, 6, 7, 9]
+    };
+    const isDotVisible = (value, position) => {
+      return dotPatterns[value] && dotPatterns[value].includes(position);
+    };
     const rollDice = () => {
       if (isRolling.value)
         return;
       isRolling.value = true;
       showResult.value = false;
-      let rollCount = 0;
-      const maxRolls = 15;
-      const rollInterval = setInterval(() => {
-        diceValues.value = Array.from(
-          { length: diceCount.value },
-          () => Math.floor(Math.random() * 6) + 1
-        );
-        rollCount++;
-        if (rollCount >= maxRolls) {
-          clearInterval(rollInterval);
-          isRolling.value = false;
-          showResult.value = true;
+      for (let i = 0; i < 6; i++) {
+        diceList.value[i].isRolling = i < diceCount.value;
+      }
+      const rollDurations = [];
+      for (let i = 0; i < diceCount.value; i++) {
+        rollDurations.push(800 + Math.random() * 600 + i * 150);
+      }
+      const intervals = [];
+      for (let i = 0; i < diceCount.value; i++) {
+        const interval = setInterval(() => {
+          diceList.value[i].value = Math.floor(Math.random() * 6) + 1;
+        }, 50);
+        intervals.push(interval);
+      }
+      for (let i = 0; i < diceCount.value; i++) {
+        setTimeout(() => {
+          clearInterval(intervals[i]);
+          diceList.value[i].isRolling = false;
+          diceList.value[i].value = Math.floor(Math.random() * 6) + 1;
           common_vendor.index.vibrateShort({
             type: "medium"
           });
-        }
-      }, 80);
+          if (i === diceCount.value - 1) {
+            isRolling.value = false;
+            showResult.value = true;
+          }
+        }, rollDurations[i]);
+      }
     };
+    common_vendor.watch(diceCount, () => {
+      showResult.value = false;
+    });
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: diceCount.value === 1 ? 1 : "",
-        b: common_vendor.o(($event) => diceCount.value = 1),
-        c: diceCount.value === 2 ? 1 : "",
-        d: common_vendor.o(($event) => diceCount.value = 2),
-        e: diceCount.value === 3 ? 1 : "",
-        f: common_vendor.o(($event) => diceCount.value = 3),
-        g: common_vendor.f(diceValues.value, (value, index, i0) => {
+        a: common_vendor.f(6, (i, k0, i0) => {
           return {
-            a: common_vendor.f(value, (dot, k1, i1) => {
-              return {
-                a: dot,
-                b: common_vendor.n("dot-" + dot)
-              };
-            }),
-            b: index
+            a: common_vendor.t(i),
+            b: diceCount.value === i ? 1 : "",
+            c: i,
+            d: common_vendor.o(($event) => diceCount.value = i, i)
           };
         }),
-        h: isRolling.value ? 1 : "",
-        i: showResult.value
-      }, showResult.value ? {
-        j: common_vendor.t(totalValue.value)
+        b: common_vendor.f(diceList.value, (dice, index, i0) => {
+          return {
+            a: common_vendor.f(9, (dotPos, k1, i1) => {
+              return {
+                a: dotPos,
+                b: isDotVisible(dice.value, dotPos) ? 1 : ""
+              };
+            }),
+            b: index,
+            c: dice.isRolling ? 1 : "",
+            d: `${index * 0.05}s`
+          };
+        }),
+        c: showResult.value && !isRolling.value
+      }, showResult.value && !isRolling.value ? {
+        d: common_vendor.t(totalValue.value),
+        e: common_vendor.f(diceList.value, (dice, index, i0) => {
+          return {
+            a: common_vendor.t(index + 1),
+            b: common_vendor.t(dice.value),
+            c: index
+          };
+        })
       } : {}, {
-        k: common_vendor.t(isRolling.value ? "摇动中..." : "摇骰子"),
-        l: common_vendor.o(rollDice),
-        m: isRolling.value
+        f: common_vendor.t(isRolling.value ? "摇动中..." : "🎲 摇骰子"),
+        g: common_vendor.o(rollDice),
+        h: isRolling.value
       });
     };
   }
